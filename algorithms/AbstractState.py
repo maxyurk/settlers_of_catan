@@ -29,6 +29,16 @@ class AbstractState(abc.ABC):
         """reverts specified move"""
         pass
 
+    @abc.abstractmethod
+    def get_current_player(self):
+        """returns the player that should play next"""
+        pass
+
+    @abc.abstractmethod
+    def throw_dice(self):
+        """throws the dice, and gives players the cards they need"""
+        pass
+
 
 class AbstractMove(abc.ABC):
     pass
