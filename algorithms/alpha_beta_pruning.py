@@ -1,46 +1,14 @@
-import abc
 import math
 
+from algorithms.AbstractState import AbstractState
 
-class AbstractMove(abc.ABC):
+
+def heuristic_value(state: AbstractState):
+    """evaluates the heuristic value of the current state
+    Returns:
+        Number: evaluated value of current state
+    """
     pass
-
-
-class AbstractState(abc.ABC):
-
-    @abc.abstractmethod
-    def is_final(self):
-        """
-        Returns:
-            bool: indicating whether the current state is a final one
-        """
-        pass
-
-    @abc.abstractmethod
-    def heuristic_value(self):
-        """evaluates the heuristic value of the current state
-        Returns:
-            Number: evaluated value of current state
-        """
-        pass
-
-    @abc.abstractmethod
-    def get_next_moves(self):
-        """computes the next moves available from the current state
-        Returns:
-            List of AbstractMove: a list of the next moves
-        """
-        yield None
-
-    @abc.abstractmethod
-    def make_move(self, move: AbstractMove):
-        """makes specified move"""
-        pass
-
-    @abc.abstractmethod
-    def unmake_move(self, move: AbstractMove):
-        """reverts specified move"""
-        pass
 
 
 def alpha_beta(state: AbstractState, depth, alpha, beta, is_maximizing_player):
@@ -52,7 +20,7 @@ def alpha_beta(state: AbstractState, depth, alpha, beta, is_maximizing_player):
     """
 
     if depth == 0 or state.is_final():
-        return state.heuristic_value()
+        return heuristic_value(state)
 
     if is_maximizing_player:
         v = -math.inf
