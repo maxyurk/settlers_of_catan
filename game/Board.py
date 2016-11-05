@@ -1,7 +1,8 @@
 import numpy
 import networkx
 import enum
-from typing import List
+import random
+from typing import List, Tuple
 
 
 """
@@ -48,17 +49,20 @@ O      O      O
     O     O
 
 """
-number_of_hexagons = 19
+
+
 
 
 class Resource(enum.Enum):
-    Wood = 1
-    Steel = 2
-    Clay = 3
-    Sheep = 4
+    Brick = 1
+    Lumber = 2
+    Wool = 3
+    Grain = 4
+    Ore = 5
+    Desert = 6
 
 
-class Settlement:
+class Vertex:
     def __init__(self):
         pass
 
@@ -67,24 +71,27 @@ class Settlement:
         pass
 
 
-class Road:
+class Edge:
     def __init__(self):
         pass
 
 
 class Board:
+    _land_numbers = [2, 12] + [i for i in range(3, 11)] * 2
+    random.shuffle(_land_numbers)
+
     def __init__(self):
         self.roads_and_villages = networkx.Graph()
         self.resources = numpy.array([i for i in range(number_of_hexagons)])
 
-    def get_all_settleable_locations(self) -> List[Settlement]:
+    def get_all_settleable_locations(self) -> List[Vertex]:
         """get non-colonised (empty vertices) locations on map"""
         pass
 
-    def get_settleable_locations_by_player(self, player) -> List[Settlement]:
+    def get_settleable_locations_by_player(self, player) -> List[Tuple(Vertex, int)]:
         """get non-colonised (empty vertices) locations on map that this player can settle"""
         pass
 
-    def get_roads_near_player(self, player) -> List[Road]:
+    def get_unpaved_roads_near_player(self, player) -> List[Edge]:
         """get unpaved (empty edges) roads on map that this player can pave"""
         pass
