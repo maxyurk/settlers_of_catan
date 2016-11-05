@@ -1,8 +1,8 @@
 from unittest import TestCase
-import Board
+import Game
 
 
 class TestBoard(TestCase):
     def test___init__(self):
-        board = Board.Board()
+        board = Game.Board()
 
