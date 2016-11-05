@@ -66,7 +66,7 @@ class Vertex:
     def __init__(self):
         pass
 
-    def get_surrounding_resources(self) -> List[Resource]:
+    def get_surrounding_resources(self) -> List[Tuple(Resource, int)]:
         """get resources surrounding this settlement"""
         pass
 
@@ -77,18 +77,28 @@ class Edge:
 
 
 class Board:
-    _land_numbers = [2, 12] + [i for i in range(3, 11)] * 2
-    random.shuffle(_land_numbers)
-
     def __init__(self):
-        self.roads_and_villages = networkx.Graph()
-        self.resources = numpy.array([i for i in range(number_of_hexagons)])
+        self._roads_and_villages = networkx.Graph()
+        self._shuffle_map()
+
+    def _shuffle_map(self):
+        _land_numbers = [2, 12] + [i for i in range(3, 11)] * 2
+        _land_resources = [Resource.Brick, Resource.Ore] * 3 + \
+                          [Resource.Lumber, Resource.Wool, Resource.Grain] * 4
+
+        random.shuffle(_land_numbers)
+        random.shuffle(_land_resources)
+
+        _land_resources.append(Resource.Desert)
+        _land_numbers.append(0)
+
+        self._lands = zip(_land_resources, _land_numbers)
 
     def get_all_settleable_locations(self) -> List[Vertex]:
         """get non-colonised (empty vertices) locations on map"""
         pass
 
-    def get_settleable_locations_by_player(self, player) -> List[Tuple(Vertex, int)]:
+    def get_settleable_locations_by_player(self, player) -> List[Vertex]:
         """get non-colonised (empty vertices) locations on map that this player can settle"""
         pass
 
