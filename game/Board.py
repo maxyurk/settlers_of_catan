@@ -51,6 +51,54 @@ O      O      O
 """
 
 
+def _create_graph():
+    vertices_rows = [
+        [i for i in range(0, 3)],
+        [i for i in range(3, 7)],
+        [i for i in range(7, 11)],
+        [i for i in range(11, 16)],
+        [i for i in range(16, 21)],
+        [i for i in range(21, 27)],
+        [i for i in range(27, 33)],
+        [i for i in range(33, 38)],
+        [i for i in range(38, 43)],
+        [i for i in range(43, 47)],
+        [i for i in range(47, 51)],
+        [i for i in range(51, 54)]
+    ]
+    vertices = [v for vertices_row in vertices_rows for v in vertices_row]
+    edges = _create_edges(vertices_rows)
+    g = networkx.Graph()
+    g.add_nodes_from(vertices)
+    g.add_edges_from(edges)
+    return g
+
+
+def _create_edges(vertices_rows):
+    edges = []
+    for i in range(5):
+        _create_row_edges(edges, i, i + 1, vertices_rows, i % 2 == 0)
+        _create_row_edges(edges, -i - 1, -i - 2, vertices_rows, i % 2 == 0)
+    _create_odd_rows_edges(edges, vertices_rows[5], vertices_rows[6])
+    return edges
+
+
+def _create_row_edges(edges, i, j, vertices_rows, is_even_row):
+    if is_even_row:
+        _create_even_rows_edges(edges, vertices_rows[j], vertices_rows[i])
+    else:
+        _create_odd_rows_edges(edges, vertices_rows[j], vertices_rows[i])
+
+
+def _create_odd_rows_edges(edges, first_row, second_row):
+    for edge in zip(second_row, first_row):
+        edges.append(edge)
+
+
+def _create_even_rows_edges(edges, larger_row, smaller_row):
+    for i in range(len(smaller_row)):
+        edges.append((smaller_row[i], larger_row[i]))
+        edges.append((smaller_row[i], larger_row[i + 1]))
 
 
 class Resource(enum.Enum):
@@ -66,7 +114,7 @@ class Vertex:
     def __init__(self):
         pass
 
-    def get_surrounding_resources(self) -> List[Tuple(Resource, int)]:
+    def get_surrounding_resources(self) -> List[Tuple[Resource, int]]:
         """get resources surrounding this settlement"""
         pass
 
@@ -77,9 +125,13 @@ class Edge:
 
 
 class Board:
+
     def __init__(self):
-        self._roads_and_villages = networkx.Graph()
         self._shuffle_map()
+        self._create_graph()
+
+    def _create_graph(self):
+        self._roads_and_villages = _create_graph()
 
     def _shuffle_map(self):
         _land_numbers = [2, 12] + [i for i in range(3, 11)] * 2
