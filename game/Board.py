@@ -126,21 +126,13 @@ class Board:
                 coloniseable.append(u)
         return coloniseable
 
-    def is_colonised(self, v):
-        return self._roads_and_colonies.node[v]['player'][0] is not None
-
-    def has_road_been_paved_by(self, player, path: Path):
-        """returns True if road (in the given path) was paved by given player,
-        returns False otherwise"""
-        return self._roads_and_colonies[path[0]][path[1]]['player'][0] == player
-
     def get_unpaved_roads_near_player(self, player) -> List[Path]:
         """get unpaved (empty edges) paths on map that this player can pave"""
         roads = [e for e in self._roads_and_colonies.edges_iter()
                  if self.has_road_been_paved_by(player, e)]
         locations_non_colonised_by_other_players = [
-            v for v in list(chain(*roads))
-            if self._roads_and_colonies.node[v]['player'][0] not in [player, None]]
+            v for v in set(chain(*roads))
+            if self._roads_and_colonies.node[v]['player'][0] in [player, None]]
         return [(u, v) for u in locations_non_colonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
                 if self._roads_and_colonies[u][v]['player'][0] is None]
@@ -149,15 +141,23 @@ class Board:
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v]['player'][0] == player]
 
+    def get_surrounding_resources(self, location: Location) -> List[Land]:
+        """get resources surrounding the settlement in this location"""
+        return self._roads_and_colonies.node[location]['lands']
+
     def settle_location(self, player, location: Location, colony: Colony):
         self._roads_and_colonies.node[location]['player'] = (player, colony)
 
     def pave_road(self, player, location: Path):
         self._roads_and_colonies[location[0]][location[1]]['player'] = (player, Road.Road)
 
-    def get_surrounding_resources(self, location: Location) -> List[Land]:
-        """get resources surrounding the settlement in this location"""
-        return self._roads_and_colonies.node[location]['lands']
+    def is_colonised(self, v):
+        return self._roads_and_colonies.node[v]['player'][0] is not None
+
+    def has_road_been_paved_by(self, player, path: Path):
+        """returns True if road (in the given path) was paved by given player,
+        returns False otherwise"""
+        return self._roads_and_colonies[path[0]][path[1]]['player'][0] == player
 
     _vertices_rows = [
         [i for i in range(0, 3)],

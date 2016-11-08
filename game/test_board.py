@@ -4,7 +4,6 @@ from game.Board import *
 
 
 class TestBoard(TestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -41,9 +40,22 @@ class TestBoard(TestCase):
     def test_get_unpaved_roads_near_player(self):
         paths = self.b.get_unpaved_roads_near_player(self.player1)
 
-        self.assertEqual(len(paths), 2)
+        self.assertEqual(len(paths), 4)
+        self.assertIn((4, 1), paths)
         self.assertIn((11, 16), paths)
+        self.assertIn((12, 8), paths)
         self.assertIn((12, 17), paths)
 
     def test_get_settled_locations_by_player(self):
-        pass
+        locations = self.b.get_settled_locations_by_player(self.player1)
+
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0], 0)
+
+    def test_get_surrounding_resources(self):
+        lands = self.b.get_surrounding_resources(30)
+
+        self.assertListEqual(lands, [
+            self.b._lands[9], self.b._lands[10], self.b._lands[14]])
+
+
