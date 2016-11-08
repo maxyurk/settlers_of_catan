@@ -22,12 +22,12 @@ each edge & vertex in the graph will be bi-directionally linked to it's hexagons
 
 Example
 -------
-This map (W2 means wheat with the number 5 on it, M2 is metal with 2 on it):
+This map (W2 means wool  with the number 5 on it, L2 is lumber with 2 on it):
 
     O     O
  /    \ /    \
 O      O      O
-| (W5) | (M2) |
+| (W5) | (L2) |
 O      O      O
  \    / \    /
     O     O
@@ -35,7 +35,7 @@ O      O      O
 In the DS, will be represented as follows:
 The array:
  ---- ----
-| W5 | M2 |
+| W5 | L2 |
  ---- ----
 The graph will have the shape of the map, where the edges are \,/,|
 and the vertices are O.
@@ -62,23 +62,44 @@ class Resource(enum.Enum):
 class Colony(enum.Enum):
     Settlement = 1
     City = 2
-    Empty = 3
+    Uncolonised = 3
 
-Vertex = int
-Edge = Tuple[int, int]
+
+class Road(enum.Enum):
+    Road = 1
+    Unpaved = 2
+
+
+Location = int
+"""Location is a vertex in the graph
+A place that can be colonised (with a settlement, and later with a city)
+"""
+
+Path = Tuple[int, int]
+"""Path is an edge in the graph
+A place that a road can be paved in
+"""
+
+Land = Tuple[Resource, int]
+"""Land is an element in the lands array
+A hexagon in the catan map, that has a resource type and a number between [2,12]
+"""
 
 
 class Board:
+    _player = 'player'
+    _lands = 'lands'
+
     def __init__(self):
         self._shuffle_map()
         self._create_graph()
 
-    def get_all_settleable_locations(self) -> List[Vertex]:
+    def get_all_settleable_locations(self) -> List[Location]:
         """get non-colonised (empty vertices) locations on map"""
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v]['player'][0] is None]
 
-    def get_settleable_locations_by_player(self, player) -> List[Vertex]:
+    def get_settleable_locations_by_player(self, player) -> List[Location]:
         """get non-colonised (empty vertices) locations on map that this player can settle"""
         settlements = self.get_settled_locations_by_player(player)
         settleable_locations = []
@@ -92,7 +113,7 @@ class Board:
             settleable_locations.extend(two_hop)
         return settleable_locations
 
-    def get_unpaved_roads_near_player(self, player) -> List[Edge]:
+    def get_unpaved_roads_near_player(self, player) -> List[Path]:
         """get unpaved (empty edges) roads on map that this player can pave"""
         roads = [e for e in self._roads_and_colonies.edges_iter()
                  if self._roads_and_colonies[e[0]][e[1]]['player'][0] == player]
@@ -103,19 +124,19 @@ class Board:
                 for v in self._roads_and_colonies.neighbors(u)
                 if self._roads_and_colonies[u][v]['player'][0] is None]
 
-    def get_settled_locations_by_player(self, player):
+    def get_settled_locations_by_player(self, player) -> List[Location]:
         return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies[v]['player'][0] == player]
+                if self._roads_and_colonies.node[v]['player'][0] == player]
 
-    def settle_location(self, player, location: Vertex, colony: Colony):
+    def settle_location(self, player, location: Location, colony: Colony):
         self._roads_and_colonies.node[location]['player'] = (player, colony)
 
-    def pave_road(self, player, location: Edge):
-        self._roads_and_colonies[location[0]][location[1]]['player'] = player
+    def pave_road(self, player, location: Path):
+        self._roads_and_colonies[location[0]][location[1]]['player'] = (player, Road.Road)
 
-    def get_surrounding_resources(self, location: Vertex) -> List[Tuple[Resource, int]]:
+    def get_surrounding_resources(self, location: Location) -> List[Land]:
         """get resources surrounding the settlement in this location"""
-        pass
+        return self._roads_and_colonies.node[location]['lands']
 
     _vertices_rows = [
         [i for i in range(0, 3)],
@@ -148,24 +169,18 @@ class Board:
         self._lands = [land for land in lands]
 
     def _create_graph(self):
-        edges = Board._create_edges(Board._vertices_rows)
-
         self._roads_and_colonies = networkx.Graph()
         self._roads_and_colonies.add_nodes_from(Board._vertices)
-        self._roads_and_colonies.add_edges_from(edges)
-
-        vertices_map = {vertex: (None, Colony.Empty) for vertex in Board._vertices}
-        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_map)
-
-        self._link_lands_to_graph()
+        self._roads_and_colonies.add_edges_from(Board._create_edges())
+        self._set_attributes()
 
     @staticmethod
-    def _create_edges(vertices_rows):
+    def _create_edges():
         edges = []
         for i in range(5):
-            Board._create_row_edges(edges, i, i + 1, vertices_rows, i % 2 == 0)
-            Board._create_row_edges(edges, -i - 1, -i - 2, vertices_rows, i % 2 == 0)
-        Board._create_odd_rows_edges(edges, vertices_rows[5], vertices_rows[6])
+            Board._create_row_edges(edges, i, i + 1, Board._vertices_rows, i % 2 == 0)
+            Board._create_row_edges(edges, -i - 1, -i - 2, Board._vertices_rows, i % 2 == 0)
+        Board._create_odd_rows_edges(edges, Board._vertices_rows[5], Board._vertices_rows[6])
         return edges
 
     @staticmethod
@@ -186,14 +201,23 @@ class Board:
             edges.append((smaller_row[i], larger_row[i]))
             edges.append((smaller_row[i], larger_row[i + 1]))
 
-    def _link_lands_to_graph(self):
-        vertices_map = self._create_vertices_to_lands_mapping()
-        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_map)
+    def _set_attributes(self):
+        vertices_to_lands = self._create_vertices_to_lands_mapping()
+        self._set_vertices_attributes(vertices_to_lands)
+        self._set_edges_attributes(vertices_to_lands)
 
+    def _set_vertices_attributes(self, vertices_to_lands):
+        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_to_lands)
+        vertices_to_players = {v: (None, Colony.Uncolonised) for v in Board._vertices}
+        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_to_players)
+
+    def _set_edges_attributes(self, vertices_to_lands):
         for edge in self._roads_and_colonies.edges_iter():
-            lands_intersection = [
-                land for land in vertices_map[edge[0]] if land in vertices_map[edge[1]]]
-            self._roads_and_colonies[edge[0]][edge[1]]['lands'] = lands_intersection
+            lands_intersection = [land for land in vertices_to_lands[edge[0]]
+                                  if land in vertices_to_lands[edge[1]]]
+            edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]
+            edge_attributes['lands'] = lands_intersection
+            edge_attributes['player'] = (None, Road.Unpaved)
 
     def _create_vertices_to_lands_mapping(self):
         land_rows = [
@@ -212,19 +236,19 @@ class Board:
         ]
         vertices_map = {vertex: [] for vertex in Board._vertices}
         for vertices_rows, land_row in zip(vertices_rows_per_land_row, land_rows):
-            Board._top_vertex_mapping(vertices_map, vertices_rows[0], land_row)
-            Board._middle_vertex_mapping(vertices_map, vertices_rows[1], land_row)
-            Board._middle_vertex_mapping(vertices_map, vertices_rows[2], land_row)
-            Board._top_vertex_mapping(vertices_map, vertices_rows[3], land_row)
+            Board._create_top_vertex_mapping(vertices_map, vertices_rows[0], land_row)
+            Board._create_middle_vertex_mapping(vertices_map, vertices_rows[1], land_row)
+            Board._create_middle_vertex_mapping(vertices_map, vertices_rows[2], land_row)
+            Board._create_top_vertex_mapping(vertices_map, vertices_rows[3], land_row)
         return vertices_map
 
     @staticmethod
-    def _top_vertex_mapping(vertices_map, vertices, lands):
+    def _create_top_vertex_mapping(vertices_map, vertices, lands):
         for vertex, land in zip(vertices, lands):
             vertices_map[vertex].append(land)
 
     @staticmethod
-    def _middle_vertex_mapping(vertices_map, vertices, lands):
+    def _create_middle_vertex_mapping(vertices_map, vertices, lands):
         vertices_map[vertices[0]].append(lands[0])
         vertices_map[vertices[-1]].append(lands[-1])
 
