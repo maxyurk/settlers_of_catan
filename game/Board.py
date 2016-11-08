@@ -97,29 +97,50 @@ class Board:
     def get_all_settleable_locations(self) -> List[Location]:
         """get non-colonised (empty vertices) locations on map"""
         return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies.node[v]['player'][0] is None]
+                if not self.is_colonised(v)]
 
     def get_settleable_locations_by_player(self, player) -> List[Location]:
         """get non-colonised (empty vertices) locations on map that this player can settle"""
-        settlements = self.get_settled_locations_by_player(player)
-        settleable_locations = []
-        for u in settlements:
-            one_hop = [v for v in self._roads_and_colonies.neighbors(u)
-                       if self._roads_and_colonies[u][v]['player'][0] == player]
+        non_colonised = [v for v in self._roads_and_colonies.nodes_iter()
+                         if not self.is_colonised(v)]
+        coloniseable = []
+        for u in non_colonised:
+            is_coloniseable = True
+            one_hop_from_non_colonised = []
+            for v in self._roads_and_colonies.neighbors(u):
+                if self.is_colonised(v):
+                    is_coloniseable = False
+                    break
+                if self.has_road_been_paved_by(player, (u, v)):
+                    one_hop_from_non_colonised.append(v)
+            if not is_coloniseable:
+                continue
 
-            two_hop = [w for v in one_hop for w in self._roads_and_colonies.neighbors(v)
-                       if w != u and self._roads_and_colonies[v][w]['player'][0] == player
-                       and self._roads_and_colonies.node[w]['player'][0] is None]
-            settleable_locations.extend(two_hop)
-        return settleable_locations
+            is_coloniseable = False
+            for v in one_hop_from_non_colonised:
+                for w in self._roads_and_colonies.neighbors(v):
+                    if w != u and self.has_road_been_paved_by(player, (v, w)):
+                        is_coloniseable = True
+                        break
+            if is_coloniseable:
+                coloniseable.append(u)
+        return coloniseable
+
+    def is_colonised(self, v):
+        return self._roads_and_colonies.node[v]['player'][0] is not None
+
+    def has_road_been_paved_by(self, player, path: Path):
+        """returns True if road (in the given path) was paved by given player,
+        returns False otherwise"""
+        return self._roads_and_colonies[path[0]][path[1]]['player'][0] == player
 
     def get_unpaved_roads_near_player(self, player) -> List[Path]:
-        """get unpaved (empty edges) roads on map that this player can pave"""
+        """get unpaved (empty edges) paths on map that this player can pave"""
         roads = [e for e in self._roads_and_colonies.edges_iter()
-                 if self._roads_and_colonies[e[0]][e[1]]['player'][0] == player]
-        locations_non_colonised_by_other_players = \
-            [v for v in list(chain(roads))
-             if self._roads_and_colonies.node[v]['player'][0] not in [player, None]]
+                 if self.has_road_been_paved_by(player, e)]
+        locations_non_colonised_by_other_players = [
+            v for v in list(chain(*roads))
+            if self._roads_and_colonies.node[v]['player'][0] not in [player, None]]
         return [(u, v) for u in locations_non_colonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
                 if self._roads_and_colonies[u][v]['player'][0] is None]
