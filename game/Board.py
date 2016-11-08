@@ -1,10 +1,8 @@
-from itertools import chain
-
 import networkx
 import enum
 import random
+from itertools import chain
 from typing import List, Tuple
-from collections import OrderedDict, namedtuple
 
 """
 Structure
@@ -66,22 +64,59 @@ class Colony(enum.Enum):
     City = 2
     Empty = 3
 
-
-class Vertex:
-    def __init__(self):
-        pass
-
-    def get_surrounding_resources(self) -> List[Tuple[Resource, int]]:
-        """get resources surrounding this settlement"""
-        pass
-
-
-class Edge:
-    def __init__(self):
-        pass
+Vertex = int
+Edge = Tuple[int, int]
 
 
 class Board:
+    def __init__(self):
+        self._shuffle_map()
+        self._create_graph()
+
+    def get_all_settleable_locations(self) -> List[Vertex]:
+        """get non-colonised (empty vertices) locations on map"""
+        return [v for v in self._roads_and_colonies.nodes()
+                if self._roads_and_colonies.node[v]['player'][0] is None]
+
+    def get_settleable_locations_by_player(self, player) -> List[Vertex]:
+        """get non-colonised (empty vertices) locations on map that this player can settle"""
+        settlements = self.get_settled_locations_by_player(player)
+        settleable_locations = []
+        for u in settlements:
+            one_hop = [v for v in self._roads_and_colonies.neighbors(u)
+                       if self._roads_and_colonies[u][v]['player'][0] == player]
+
+            two_hop = [w for v in one_hop for w in self._roads_and_colonies.neighbors(v)
+                       if w != u and self._roads_and_colonies[v][w]['player'][0] == player
+                       and self._roads_and_colonies.node[w]['player'][0] is None]
+            settleable_locations.extend(two_hop)
+        return settleable_locations
+
+    def get_unpaved_roads_near_player(self, player) -> List[Edge]:
+        """get unpaved (empty edges) roads on map that this player can pave"""
+        roads = [e for e in self._roads_and_colonies.edges_iter()
+                 if self._roads_and_colonies[e[0]][e[1]]['player'][0] == player]
+        locations_non_colonised_by_other_players = \
+            [v for v in list(chain(roads))
+             if self._roads_and_colonies.node[v]['player'][0] not in [player, None]]
+        return [(u, v) for u in locations_non_colonised_by_other_players
+                for v in self._roads_and_colonies.neighbors(u)
+                if self._roads_and_colonies[u][v]['player'][0] is None]
+
+    def get_settled_locations_by_player(self, player):
+        return [v for v in self._roads_and_colonies.nodes()
+                if self._roads_and_colonies[v]['player'][0] == player]
+
+    def settle_location(self, player, location: Vertex, colony: Colony):
+        self._roads_and_colonies.node[location]['player'] = (player, colony)
+
+    def pave_road(self, player, location: Edge):
+        self._roads_and_colonies[location[0]][location[1]]['player'] = player
+
+    def get_surrounding_resources(self, location: Vertex) -> List[Tuple[Resource, int]]:
+        """get resources surrounding the settlement in this location"""
+        pass
+
     _vertices_rows = [
         [i for i in range(0, 3)],
         [i for i in range(3, 7)],
@@ -97,47 +132,6 @@ class Board:
         [i for i in range(51, 54)]
     ]
     _vertices = [v for vertices_row in _vertices_rows for v in vertices_row]
-
-    def __init__(self):
-        self._shuffle_map()
-        self._create_graph()
-
-    def get_all_settleable_locations(self) -> List[Vertex]:
-        """get non-colonised (empty vertices) locations on map"""
-        return [v for v in self._roads_and_settlements.nodes()
-                if self._roads_and_settlements[v]['player'][0] is None]
-
-    def get_settleable_locations_by_player(self, player) -> List[Vertex]:
-        """get non-colonised (empty vertices) locations on map that this player can settle"""
-        settlements = self.get_settled_locations_by_player(player)
-        settleable_locations = []
-        for u in settlements:
-            one_hop = [v for v in self._roads_and_settlements.neighbors(u)
-                       if self._roads_and_settlements[u][v]['player'][0] == player]
-
-            two_hop = [w for v in one_hop for w in self._roads_and_settlements.neighbors(v)
-                       if w != u and self._roads_and_settlements[v][w]['player'][0] == player
-                       and self._roads_and_settlements.node[w]['player'][0] is None]
-            settleable_locations.extend(two_hop)
-        return settleable_locations
-
-    def get_unpaved_roads_near_player(self, player) -> List[Edge]:
-        """get unpaved (empty edges) roads on map that this player can pave"""
-        roads = [e for e in self._roads_and_settlements.edges_iter()
-                 if self._roads_and_settlements[e[0]][e[1]]['player'][0] == player]
-        locations_non_colonised_by_other_players =\
-            [v for v in list(chain(roads))
-             if self._roads_and_settlements.node[v]['player'][0] not in [player, None]]
-        return [(u, v) for u in locations_non_colonised_by_other_players
-                for v in self._roads_and_settlements.neighbors(u)
-                if self._roads_and_settlements[u][v]['player'][0] is None]
-
-    def get_settled_locations_by_player(self, player):
-        return [v for v in self._roads_and_settlements.nodes()
-                if self._roads_and_settlements[v]['player'][0] == player]
-
-    def settle_settlement(self, location, player, colony: Colony):
-        self._roads_and_settlements.node[location]['player'] = (player, colony)
 
     def _shuffle_map(self):
         land_numbers = [2, 12] + [i for i in range(3, 12) if i != 7] * 2
@@ -156,12 +150,12 @@ class Board:
     def _create_graph(self):
         edges = Board._create_edges(Board._vertices_rows)
 
-        self._roads_and_settlements = networkx.Graph()
-        self._roads_and_settlements.add_nodes_from(Board._vertices)
-        self._roads_and_settlements.add_edges_from(edges)
+        self._roads_and_colonies = networkx.Graph()
+        self._roads_and_colonies.add_nodes_from(Board._vertices)
+        self._roads_and_colonies.add_edges_from(edges)
 
         vertices_map = {vertex: (None, Colony.Empty) for vertex in Board._vertices}
-        networkx.set_node_attributes(self._roads_and_settlements, 'player', vertices_map)
+        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_map)
 
         self._link_lands_to_graph()
 
@@ -194,12 +188,12 @@ class Board:
 
     def _link_lands_to_graph(self):
         vertices_map = self._create_vertices_to_lands_mapping()
-        networkx.set_node_attributes(self._roads_and_settlements, 'lands', vertices_map)
+        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_map)
 
-        for edge in self._roads_and_settlements.edges_iter():
+        for edge in self._roads_and_colonies.edges_iter():
             lands_intersection = [
                 land for land in vertices_map[edge[0]] if land in vertices_map[edge[1]]]
-            self._roads_and_settlements[edge[0]][edge[1]]['lands'] = lands_intersection
+            self._roads_and_colonies[edge[0]][edge[1]]['lands'] = lands_intersection
 
     def _create_vertices_to_lands_mapping(self):
         land_rows = [
