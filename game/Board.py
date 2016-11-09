@@ -80,9 +80,9 @@ Path = Tuple[int, int]
 A place that a road can be paved in
 """
 
-Land = Tuple[Resource, int]
+Land = Tuple[Resource, int, int]
 """Land is an element in the lands array
-A hexagon in the catan map, that has a resource type and a number between [2,12]
+A hexagon in the catan map, that has a resource type and a number between [2,12], and id
 """
 
 
@@ -95,12 +95,19 @@ class Board:
         self._create_graph()
 
     def get_all_settleable_locations(self) -> List[Location]:
-        """get non-colonised (empty vertices) locations on map"""
+        """
+        get non-colonised (empty vertices) locations on map
+        :return: list of locations on map that aren't colonised
+        """
         return [v for v in self._roads_and_colonies.nodes()
                 if not self.is_colonised(v)]
 
     def get_settleable_locations_by_player(self, player) -> List[Location]:
-        """get non-colonised (empty vertices) locations on map that this player can settle"""
+        """
+        get non-colonised (empty vertices) locations on map that this player can settle
+        :param player: the player to get settleable location by
+        :return: list of locations on map that the player can settle locations on
+        """
         non_colonised = [v for v in self._roads_and_colonies.nodes_iter()
                          if not self.is_colonised(v)]
         coloniseable = []
@@ -127,7 +134,12 @@ class Board:
         return coloniseable
 
     def get_unpaved_roads_near_player(self, player) -> List[Path]:
-        """get unpaved (empty edges) paths on map that this player can pave"""
+        """
+        get unpaved (empty edges) paths on map that this player can pave
+        :param player: the player to get paths on map that he can pave
+        :return: list of paths the player can pave a road in
+        """
+
         roads = [e for e in self._roads_and_colonies.edges_iter()
                  if self.has_road_been_paved_by(player, e)]
         locations_non_colonised_by_other_players = [
@@ -138,25 +150,60 @@ class Board:
                 if self._roads_and_colonies[u][v]['player'][0] is None]
 
     def get_settled_locations_by_player(self, player) -> List[Location]:
+        """
+        get the colonies owned by given player
+        :param player: the player to get the colonies of
+        :return: list of locations that have colonies of the given player
+        """
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v]['player'][0] == player]
 
     def get_surrounding_resources(self, location: Location) -> List[Land]:
-        """get resources surrounding the settlement in this location"""
+        """
+        get resources surrounding the settlement in this location
+        :param location: the location to get the resources around
+        :return: list of lands, which are a tuple of (Resource, number, id)
+                    where Resource is the hexagon resource,
+                    number is the number on the specified hexagon,
+                    and the id is the number of the resource in the _lands array
+        """
+
         return self._roads_and_colonies.node[location]['lands']
 
     def settle_location(self, player, location: Location, colony: Colony):
+        """
+        settle given colony pye in given location by given player
+        :param player: the player to settle a settlement of
+        :param location: the location to put the settlement on
+        :param colony: the colony type to put (settlement/city)
+        :return: None
+        """
         self._roads_and_colonies.node[location]['player'] = (player, colony)
 
-    def pave_road(self, player, location: Path):
-        self._roads_and_colonies[location[0]][location[1]]['player'] = (player, Road.Road)
+    def pave_road(self, player, path: Path):
+        """
+        pave road in given location by given player
+        :param player: the player that paves the road
+        :param path: the path on the map to pave the road at
+        :return: None
+        """
+        self._roads_and_colonies[path[0]][path[1]]['player'] = (player, Road.Road)
 
-    def is_colonised(self, v):
-        return self._roads_and_colonies.node[v]['player'][0] is not None
+    def is_colonised(self, location: Location):
+        """
+        indicate whether the specified location is colonised
+        :param location: the location to check
+        :return: True if specified location is colonised, false otherwise
+        """
+        return self._roads_and_colonies.node[location]['player'][0] is not None
 
     def has_road_been_paved_by(self, player, path: Path):
-        """returns True if road (in the given path) was paved by given player,
-        returns False otherwise"""
+        """
+        indicate whether a road has been paved in specified location by specified player
+        :param player: the player to check if he paved a road in that path
+        :param path: the path to check if the player paved a road at
+        :return: True if road on that path has been paved by given player, False otherwise
+        """
         return self._roads_and_colonies[path[0]][path[1]]['player'][0] == player
 
     _vertices_rows = [
