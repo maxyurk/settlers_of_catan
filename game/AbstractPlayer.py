@@ -41,3 +41,38 @@ class AbstractPlayer(abc.ABC):
         :return: the number of resource units the player has
         """
         return self.resources[resource_type]
+
+    def has_resources_for_road(self):
+        """
+        indicate whether there are enough resources to pave a road
+        :return: True if enough resources to pave a road, False otherwise
+        """
+        return (self.resources[Resource.Brick] >= 1 and
+                self.resources[Resource.Lumber] >= 1)
+
+    def has_resources_for_settlement(self):
+        """
+        indicate whether there are enough resources to build a settlement
+        :return: True if enough resources to build a settlement, False otherwise
+        """
+        return (self.resources[Resource.Brick] >= 1 and
+                self.resources[Resource.Lumber] >= 1 and
+                self.resources[Resource.Wool] >= 1 and
+                self.resources[Resource.Grain] >= 1)
+
+    def has_resources_for_city(self):
+        """
+        indicate whether there are enough resources to build a city
+        :return: True if enough resources to build a city, False otherwise
+        """
+        return (self.resources[Resource.Ore] >= 3 and
+                self.resources[Resource.Grain] >= 2)
+
+    def has_resources_for_development_card(self):
+        """
+        indicate whether there are enough resources to buy a development card
+        :return: True if enough resources to buy a development card, False otherwise
+        """
+        return (self.resources[Resource.Ore] >= 1 and
+                self.resources[Resource.Wool] >= 1 and
+                self.resources[Resource.Grain] >= 1)
