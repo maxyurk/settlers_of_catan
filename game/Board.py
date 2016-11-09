@@ -1,6 +1,7 @@
 import networkx
 import enum
 import random
+from logging import warning
 from itertools import chain
 from typing import List, Tuple
 
@@ -66,7 +67,7 @@ class Colony(enum.Enum):
 
 
 class Road(enum.Enum):
-    Road = 1
+    Paved = 1
     Unpaved = 2
 
 
@@ -170,24 +171,39 @@ class Board:
 
         return self._roads_and_colonies.node[location]['lands']
 
-    def settle_location(self, player, location: Location, colony: Colony):
+    def set_location(self, player, location: Location, colony: Colony):
         """
-        settle given colony pye in given location by given player
-        :param player: the player to settle a settlement of
+        settle/unsettle given colony type in given location by given player
+        NOTE that if the colony type is Colony.Uncolonised, then the player is irrelevant
+        :param player: the player to settle/unsettle a settlement of
         :param location: the location to put the settlement on
         :param colony: the colony type to put (settlement/city)
         :return: None
         """
+        if ((colony == Colony.Uncolonised and player is not None) or
+                (player is None and colony != Colony.Uncolonised)):
+            warning('set_location bad arguments: ({}, {}) is not a logical combination'
+                    .format(player, colony))
+            player = None
+            colony = Colony.Uncolonised
         self._roads_and_colonies.node[location]['player'] = (player, colony)
 
-    def pave_road(self, player, path: Path):
+    def set_path(self, player, path: Path, road: Road):
         """
-        pave road in given location by given player
-        :param player: the player that paves the road
-        :param path: the path on the map to pave the road at
+        pave/un-pave road in given location by given player
+        NOTE that if the road type is Road.Unpaved, then the player is irrelevant
+        :param player: the player that paves/un-paves the road
+        :param path: the path on the map to pave/un-pave the road at
+        :param road: road type. Road.Paved to pave, Road.Unpaved to un-pave
         :return: None
         """
-        self._roads_and_colonies[path[0]][path[1]]['player'] = (player, Road.Road)
+        if ((road == Road.Unpaved and player is not None) or
+                (player is None and road != Road.Unpaved)):
+            warning('set_path bad arguments: ({}, {}) is not a logical combination'
+                    .format(player, road))
+            player = None
+            road = Road.Unpaved
+        self._roads_and_colonies[path[0]][path[1]]['player'] = (player, road)
 
     def is_colonised(self, location: Location):
         """

@@ -1,5 +1,4 @@
 from unittest import TestCase
-
 from game.Board import *
 
 
@@ -11,16 +10,16 @@ class TestBoard(TestCase):
         cls.player1 = 'player 1'
         cls.player2 = 'player 2'
 
-        cls.b.settle_location(cls.player1, 0, Colony.Settlement)
-        cls.b.pave_road(cls.player1, (0, 3))
-        cls.b.pave_road(cls.player1, (3, 7))
-        cls.b.pave_road(cls.player1, (7, 11))
-        cls.b.pave_road(cls.player1, (7, 12))
-        cls.b.pave_road(cls.player1, (0, 4))
-        cls.b.pave_road(cls.player1, (4, 8))
-        cls.b.settle_location(cls.player2, 8, Colony.Settlement)
-        cls.b.pave_road(cls.player2, (8, 13))
-        cls.b.pave_road(cls.player2, (13, 9))
+        cls.b.set_location(cls.player1, 0, Colony.Settlement)
+        cls.b.set_path(cls.player1, (0, 3), Road.Paved)
+        cls.b.set_path(cls.player1, (3, 7), Road.Paved)
+        cls.b.set_path(cls.player1, (7, 11), Road.Paved)
+        cls.b.set_path(cls.player1, (7, 12), Road.Paved)
+        cls.b.set_path(cls.player1, (0, 4), Road.Paved)
+        cls.b.set_path(cls.player1, (4, 8), Road.Paved)
+        cls.b.set_location(cls.player2, 8, Colony.Settlement)
+        cls.b.set_path(cls.player2, (8, 13), Road.Paved)
+        cls.b.set_path(cls.player2, (13, 9), Road.Paved)
 
     def test___init__(self):
         self.assertIsNotNone(self.b)
