@@ -17,7 +17,7 @@ class TestBoard(TestCase):
         cls.b.set_path(cls.player1, (7, 12), Road.Paved)
         cls.b.set_path(cls.player1, (0, 4), Road.Paved)
         cls.b.set_path(cls.player1, (4, 8), Road.Paved)
-        cls.b.set_location(cls.player2, 8, Colony.Settlement)
+        cls.b.set_location(cls.player2, 8, Colony.City)
         cls.b.set_path(cls.player2, (8, 13), Road.Paved)
         cls.b.set_path(cls.player2, (13, 9), Road.Paved)
 
@@ -57,4 +57,6 @@ class TestBoard(TestCase):
         self.assertListEqual(lands, [
             self.b._lands[9], self.b._lands[10], self.b._lands[14]])
 
-
+    def test_get_colonies_score(self):
+        self.assertEqual(self.b.get_colonies_score(self.player1), 1)
+        self.assertEqual(self.b.get_colonies_score(self.player2), 2)

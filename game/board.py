@@ -61,9 +61,10 @@ class Resource(enum.Enum):
 
 
 class Colony(enum.Enum):
+    """the enumeration is also used to specify the points colony type is worth"""
+    Uncolonised = 0
     Settlement = 1
     City = 2
-    Uncolonised = 3
 
 
 class Road(enum.Enum):
@@ -94,6 +95,7 @@ class Board:
     def __init__(self):
         self._shuffle_map()
         self._create_graph()
+        self._player_colonies_points = {}
 
     def get_all_settleable_locations(self) -> List[Location]:
         """
@@ -171,10 +173,23 @@ class Board:
 
         return self._roads_and_colonies.node[location]['lands']
 
+    def get_colonies_score(self, player) -> int:
+        """
+        get the colonies score-count of a single player
+        that is the sum of points the player got for his colonies
+        :param player: a player to get the colonies-score of
+        :return: int, the score of the specified player
+        """
+        if player in self._player_colonies_points:
+            return self._player_colonies_points[player]
+        return 0
+
     def set_location(self, player, location: Location, colony: Colony):
         """
         settle/unsettle given colony type in given location by given player
         NOTE that if the colony type is Colony.Uncolonised, then the player is irrelevant
+        if player is None or colony is Colony.Uncolonised,
+        the updated (player, colony) will be: (None ,Colony.Uncolonised)
         :param player: the player to settle/unsettle a settlement of
         :param location: the location to put the settlement on
         :param colony: the colony type to put (settlement/city)
@@ -182,10 +197,18 @@ class Board:
         """
         if ((colony == Colony.Uncolonised and player is not None) or
                 (player is None and colony != Colony.Uncolonised)):
-            warning('set_location bad arguments: ({}, {}) is not a logical combination'
-                    .format(player, colony))
+            warning(' {} bad arguments: ({}, {}) is not a logical combination.'
+                    ' Treated as (None, Colony.Uncolonised)'
+                    .format(Board.set_location.__name__, player, colony))
             player = None
             colony = Colony.Uncolonised
+
+        if player not in self._player_colonies_points:
+            self._player_colonies_points[player] = 0
+        previous_colony = self._roads_and_colonies.node[location]['player'][1]
+        self._player_colonies_points[player] -= previous_colony.value
+        self._player_colonies_points[player] += colony.value
+
         self._roads_and_colonies.node[location]['player'] = (player, colony)
 
     def set_path(self, player, path: Path, road: Road):
@@ -199,8 +222,9 @@ class Board:
         """
         if ((road == Road.Unpaved and player is not None) or
                 (player is None and road != Road.Unpaved)):
-            warning('set_path bad arguments: ({}, {}) is not a logical combination'
-                    .format(player, road))
+            warning(' {} bad arguments: ({}, {}) is not a logical combination.'
+                    ' Treated as (None, Road.Unpaved)'
+                    .format(Board.set_path.__name__, player, road))
             player = None
             road = Road.Unpaved
         self._roads_and_colonies[path[0]][path[1]]['player'] = (player, road)
