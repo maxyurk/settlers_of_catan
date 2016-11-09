@@ -1,6 +1,6 @@
 import math
 
-from algorithms.AbstractState import AbstractState
+from algorithms.abstract_state import AbstractState
 
 
 def heuristic_value(state: AbstractState):

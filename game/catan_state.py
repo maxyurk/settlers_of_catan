@@ -1,10 +1,10 @@
 from typing import List
 
-from algorithms import AbstractState
-from game import AbstractPlayer
+from algorithms import abstract_state
+from game import abstract_player
 
-class CatanState(AbstractState):
-    def __init__(self, players: List[AbstractPlayer]):
+class CatanState(abstract_state):
+    def __init__(self, players: List[abstract_player]):
         self.players = players
         self.current_player_index = 0
         pass
@@ -24,12 +24,12 @@ class CatanState(AbstractState):
         """
         yield None
 
-    def make_move(self, move: AbstractState.AbstractMove):
+    def make_move(self, move: abstract_state.AbstractMove):
         """makes specified move"""
         #TODO don't forget to go to next player. somthing like current_player_index = current_player_index+1%len of list
         pass
 
-    def unmake_move(self, move: AbstractState.AbstractMove):
+    def unmake_move(self, move: abstract_state.AbstractMove):
         """reverts specified move"""
         pass
 

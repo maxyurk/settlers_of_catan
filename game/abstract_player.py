@@ -1,6 +1,6 @@
 import abc
-from algorithms import AbstractState
-from game.Board import Resource
+from algorithms import abstract_state
+from game.board import Resource
 
 
 class AbstractPlayer(abc.ABC):
@@ -8,7 +8,7 @@ class AbstractPlayer(abc.ABC):
         self.resources = {r: 0 for r in Resource}
 
     @abc.abstractmethod
-    def choose_move(self, state: AbstractState):
+    def choose_move(self, state: abstract_state):
         """Implement decision mechanism here. the state is mutable and
         it's NOT a copy so make sure you 'UNMAKE' every move you make!
         :param state: Game state to help decide on a move
