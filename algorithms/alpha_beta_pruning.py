@@ -1,6 +1,8 @@
 import math
+from typing import Callable
 
 from algorithms.abstract_state import AbstractState
+from game.abstract_player import AbstractPlayer
 
 
 def heuristic_value(state: AbstractState):
@@ -11,18 +13,31 @@ def heuristic_value(state: AbstractState):
     pass
 
 
-def alpha_beta(state: AbstractState, depth, alpha, beta, is_maximizing_player):
+def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
+               is_maximizing_player: Callable[[AbstractPlayer], bool]):
+    """
+    minimax with alpha-beta pruning
+    :param state: the Game, an interface with necessary methods (see AbstractState for details)
+    :param depth: the current depth in the game tree
+    :param alpha: the limit from above to the best move
+    :param beta: the limit from below to the best move
+    :param is_maximizing_player: a function that returns True if specified
+    player is the maximizing player, False otherwise
+    It should be something like:
+        lambda player: player == self
+    :return: best move
+    """
     """
     node would be the current state
     get children should return all the possible states after a legal game move
     node is terminal if in the current state someone won
-    huristic value of  a winning (loosing) state is (-)infinity.
+    heuristic value of  a winning (loosing) state is (-)infinity.
     """
 
     if depth == 0 or state.is_final():
         return heuristic_value(state)
 
-    if is_maximizing_player:
+    if is_maximizing_player(state.get_current_player()):
         v = -math.inf
         for move in state.get_next_moves():
             state.make_move(move)

@@ -44,6 +44,8 @@ class CatanState(AbstractState):
     def make_move(self, move: AbstractMove):
         """makes specified move"""
         #TODO don't forget to go to next player. somthing like current_player_index = current_player_index+1%len of list
+        # TODO when road is paved, check if longest road has changed
+        # TODO when knight card is used, check if largest army has changed
         pass
 
     def unmake_move(self, move: AbstractMove):
