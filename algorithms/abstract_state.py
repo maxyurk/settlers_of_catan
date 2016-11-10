@@ -1,6 +1,10 @@
 import abc
 
 
+class AbstractMove(abc.ABC):
+    pass
+
+
 class AbstractState(abc.ABC):
 
     @abc.abstractmethod
@@ -38,7 +42,3 @@ class AbstractState(abc.ABC):
     def throw_dice(self):
         """throws the dice, and gives players the cards they need"""
         pass
-
-
-class AbstractMove(abc.ABC):
-    pass

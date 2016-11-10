@@ -1,21 +1,38 @@
 from typing import List
+from game.board import Board
+from algorithms.abstract_state import AbstractState, AbstractMove
+from game.abstract_player import AbstractPlayer
 
-from algorithms import abstract_state
-from game import abstract_player
 
-class CatanState(abstract_state):
-    def __init__(self, players: List[abstract_player]):
+class CatanState(AbstractState):
+    def __init__(self, players: List[AbstractPlayer]):
         self.players = players
         self.current_player_index = 0
-        pass
+        self.board = Board()
+
+        # we must preserve these in the state, since it's possible a
+        # player has one of the special cards, while some-one has the
+        # same amount of knights-cards used/longest road length
+        # i.e when player 1 paved 5 roads, and player too as-well,
+        # but only after player 1.
+        self.player_with_largest_army = None
+        self.player_with_longest_road = None
 
     def is_final(self):
         """
+        check if the current state in the game is final or not
         Returns:
             bool: indicating whether the current state is a final one
         """
-        # TODO count points. true if somone has more than 10
-        pass
+        players_points_count = {player: self.board.get_colonies_score(player)
+                                for player in self.players}
+        if self.player_with_largest_army is not None:
+            players_points_count[self.player_with_largest_army] += 2
+        if self.player_with_longest_road is not None:
+            players_points_count[self.player_with_longest_road] += 2
+
+        highest_score = max(players_points_count.values())
+        return highest_score >= 10
 
     def get_next_moves(self):
         """computes the next moves available from the current state
@@ -24,12 +41,12 @@ class CatanState(abstract_state):
         """
         yield None
 
-    def make_move(self, move: abstract_state.AbstractMove):
+    def make_move(self, move: AbstractMove):
         """makes specified move"""
         #TODO don't forget to go to next player. somthing like current_player_index = current_player_index+1%len of list
         pass
 
-    def unmake_move(self, move: abstract_state.AbstractMove):
+    def unmake_move(self, move: AbstractMove):
         """reverts specified move"""
         pass
 

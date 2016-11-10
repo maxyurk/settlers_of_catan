@@ -1,6 +1,13 @@
 import abc
+import enum
 from algorithms import abstract_state
+from algorithms.abstract_state import AbstractState
 from game.board import Resource
+
+
+class DevelopmentCard(enum.Enum):
+    Knight = 1
+    # TODO write the rest
 
 
 class AbstractPlayer(abc.ABC):
@@ -8,7 +15,7 @@ class AbstractPlayer(abc.ABC):
         self.resources = {r: 0 for r in Resource}
 
     @abc.abstractmethod
-    def choose_move(self, state: abstract_state):
+    def choose_move(self, state: AbstractState):
         """Implement decision mechanism here. the state is mutable and
         it's NOT a copy so make sure you 'UNMAKE' every move you make!
         :param state: Game state to help decide on a move
@@ -41,6 +48,29 @@ class AbstractPlayer(abc.ABC):
         :return: the number of resource units the player has
         """
         return self.resources[resource_type]
+
+    def add_development_card(self, card: DevelopmentCard):
+        """
+        add a development-card to this player's development-cards
+        :param card: the development card to add
+        :return: None
+        """
+        pass
+
+    def remove_development_card(self, card: DevelopmentCard):
+        """
+        remove a development-card from this player's development-cards
+        :param card: the development card to remove
+        :return: None
+        """
+        pass
+
+    def get_exposed_knights_count(self) -> int:
+        """
+        get the number of times this player used a "knight" development-card
+        :return: int, the number of times "knight" card was used by the player
+        """
+        pass
 
     def has_resources_for_road(self):
         """
