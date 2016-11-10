@@ -26,12 +26,6 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
     heuristically evaluate the current state
     :return: best move
     """
-    """
-    node would be the current state
-    get children should return all the possible states after a legal game move
-    node is terminal if in the current state someone won
-    heuristic value of  a winning (loosing) state is (-)infinity.
-    """
 
     if depth == 0 or state.is_final():
         return evaluate_heuristic_value(state)
@@ -40,7 +34,8 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
         v = -math.inf
         for move in state.get_next_moves():
             state.make_move(move)
-            v = max(v, alpha_beta(state, depth - 1, alpha, beta, False))
+            v = max(v, alpha_beta(state, depth - 1, alpha, beta,
+                                  is_maximizing_player, evaluate_heuristic_value))
             state.unmake_move(move)
 
             alpha = max(v, alpha)
@@ -51,7 +46,8 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
         v = math.inf
         for move in state.get_next_moves():
             state.make_move(move)
-            v = min(v, alpha_beta(state, depth - 1, alpha, beta, True))
+            v = min(v, alpha_beta(state, depth - 1, alpha, beta,
+                                  is_maximizing_player, evaluate_heuristic_value))
             state.unmake_move(move)
 
             beta = min(v, beta)
