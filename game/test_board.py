@@ -11,15 +11,29 @@ class TestBoard(TestCase):
         cls.player2 = 'player 2'
 
         cls.b.set_location(cls.player1, 0, Colony.Settlement)
+
         cls.b.set_path(cls.player1, (0, 3), Road.Paved)
         cls.b.set_path(cls.player1, (3, 7), Road.Paved)
         cls.b.set_path(cls.player1, (7, 11), Road.Paved)
         cls.b.set_path(cls.player1, (7, 12), Road.Paved)
+
         cls.b.set_path(cls.player1, (0, 4), Road.Paved)
         cls.b.set_path(cls.player1, (4, 8), Road.Paved)
+
         cls.b.set_location(cls.player2, 8, Colony.City)
+
         cls.b.set_path(cls.player2, (8, 13), Road.Paved)
         cls.b.set_path(cls.player2, (13, 9), Road.Paved)
+        cls.b.set_path(cls.player2, (9, 5), Road.Paved)
+        cls.b.set_path(cls.player2, (5, 2), Road.Paved)
+        cls.b.set_path(cls.player2, (2, 6), Road.Paved)
+        cls.b.set_path(cls.player2, (6, 10), Road.Paved)
+        cls.b.set_path(cls.player2, (10, 15), Road.Paved)
+        cls.b.set_path(cls.player2, (15, 20), Road.Paved)
+        cls.b.set_path(cls.player2, (20, 25), Road.Paved)
+        cls.b.set_path(cls.player2, (25, 19), Road.Paved)
+        cls.b.set_path(cls.player2, (19, 14), Road.Paved)
+        cls.b.set_path(cls.player2, (14, 10), Road.Paved)
 
     def test___init__(self):
         self.assertIsNotNone(self.b)
@@ -60,3 +74,7 @@ class TestBoard(TestCase):
     def test_get_colonies_score(self):
         self.assertEqual(self.b.get_colonies_score(self.player1), 1)
         self.assertEqual(self.b.get_colonies_score(self.player2), 2)
+
+    def test_get_longest_road_length_of_player(self):
+        self.assertEqual(self.b.get_longest_road_length_of_player(self.player1), 5)
+        self.assertEqual(self.b.get_longest_road_length_of_player(self.player2), 12)

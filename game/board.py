@@ -3,7 +3,7 @@ import enum
 import random
 from logging import warning
 from itertools import chain
-from typing import List, Tuple
+from typing import List, Tuple, Set
 
 """
 Structure
@@ -184,6 +184,19 @@ class Board:
             return self._player_colonies_points[player]
         return 0
 
+    def get_longest_road_length_of_player(self, player) -> int:
+        roads_paved_by_player = [
+            e for e in self._roads_and_colonies.edges_iter()
+            if self.has_road_been_paved_by(player, e)]
+        sub_graph_of_player = networkx.Graph(roads_paved_by_player)
+
+        max_road_length = 0
+        for w in sub_graph_of_player.nodes():
+            max_road_length = max(
+                max_road_length,
+                Board._compute_longest_road_length(sub_graph_of_player, w, set()))
+        return max_road_length
+
     def set_location(self, player, location: Location, colony: Colony):
         """
         settle/unsettle given colony type in given location by given player
@@ -261,6 +274,19 @@ class Board:
         [i for i in range(51, 54)]
     ]
     _vertices = [v for vertices_row in _vertices_rows for v in vertices_row]
+
+    @staticmethod
+    def _compute_longest_road_length(g: networkx.Graph, u: Location, visited: Set[Path]):
+        max_road_length = 0
+        for v in g.neighbors(u):
+            if (u, v) in visited or (v, u) in visited:
+                continue
+            visited.add((u, v))
+            max_road_length = max(
+                max_road_length,
+                1 + Board._compute_longest_road_length(g, v, visited))
+            visited.remove((u, v))
+        return max_road_length
 
     def _shuffle_map(self):
         land_numbers = [2, 12] + [i for i in range(3, 12) if i != 7] * 2
