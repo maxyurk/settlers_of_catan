@@ -1,5 +1,6 @@
-from typing import List
-from game.board import Board
+import random
+from typing import List, Callable
+from game.board import Board, Resource
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
 
@@ -58,5 +59,38 @@ class CatanState(AbstractState):
         pass
 
     def throw_dice(self):
-        """throws the dice, and gives players the cards they need"""
-        pass
+        """throws the dice, and gives players the cards they need
+        :return: the dice throwing result (a number in the range [2,12])
+        """
+        rolled_dice_number = random.randint(2, 12)
+        self._on_thrown_dice(rolled_dice_number, AbstractPlayer.add_resource)
+
+        return rolled_dice_number
+
+    def unthrow_dice(self, rolled_dice_number):
+        """reverts the dice throwing and cards giving
+        :param rolled_dice_number: the number to undo it's cards giving
+        :return: None
+        """
+        self._on_thrown_dice(rolled_dice_number, AbstractPlayer.remove_resource)
+
+    def _on_thrown_dice(self, rolled_dice_number,
+                        add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
+        """
+        auxilary method to give/take the cards need for specified number
+        :param rolled_dice_number: the number to give/take card by
+        :param add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]
+        a function that gives/takes from the player the given amount of the given resource
+        it should either be AbstractPlayer.add_resource, or AbstractPlayer.remove_resource
+        :return: None
+        """
+        players_to_resources = \
+            self.board.get_players_to_resources_by_number(rolled_dice_number)
+
+        for player, resources_to_amount in players_to_resources.items():
+            for resource, resource_amount in resources_to_amount.items():
+                add_or_remove_resource(player, resource, resource_amount)
+
+
+
+

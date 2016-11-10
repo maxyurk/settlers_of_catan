@@ -3,7 +3,7 @@ import enum
 import random
 from logging import warning
 from itertools import chain
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 
 """
 Structure
@@ -82,9 +82,13 @@ Path = Tuple[int, int]
 A place that a road can be paved in
 """
 
-Land = Tuple[Resource, int, int]
+Land = Tuple[Resource, int, int, List[Location]]
 """Land is an element in the lands array
-A hexagon in the catan map, that has a resource type and a number between [2,12], and id
+A hexagon in the catan map, that has (in this order):
+ -a resource type
+ -a number between [2,12]
+ -an id
+ -Locations list (the locations around it)
 """
 
 
@@ -93,8 +97,9 @@ class Board:
     _lands = 'lands'
 
     def __init__(self):
-        self._shuffle_map()
+        self._create_and_shuffle_lands()
         self._create_graph()
+        self._set_attributes()
         self._player_colonies_points = {}
 
     def get_all_settleable_locations(self) -> List[Location]:
@@ -197,6 +202,26 @@ class Board:
                 Board._compute_longest_road_length(sub_graph_of_player, w, set()))
         return max_road_length
 
+    def get_players_to_resources_by_number(self, number: int) -> Dict:
+        """
+        get the resources that players get when the dice roll specified number
+        :param number: the number the dice rolled
+        :return: Dict[player, Dict[Resource, int]], a dictionary of plaers to
+        the resources they should receive
+        """
+        lands_with_this_number = [land for land in self._lands if land[1] == number]
+
+        players_to_resources = {player: {resource: 0 for resource in Resource}
+                                for player in self._player_colonies_points.keys()}
+        for land in lands_with_this_number:
+            resource = land[0]
+            for location in land[3]:
+                if self.is_colonised(location):
+                    player = self._roads_and_colonies.node[location]['player'][0]
+                    colony = self._roads_and_colonies.node[location]['player'][1]
+                    players_to_resources[player][resource] += colony.value
+        return players_to_resources
+
     def set_location(self, player, location: Location, colony: Colony):
         """
         settle/unsettle given colony type in given location by given player
@@ -288,7 +313,7 @@ class Board:
             visited.remove((u, v))
         return max_road_length
 
-    def _shuffle_map(self):
+    def _create_and_shuffle_lands(self):
         land_numbers = [2, 12] + [i for i in range(3, 12) if i != 7] * 2
         land_resources = [Resource.Lumber, Resource.Wool, Resource.Grain] * 4 + \
                          [Resource.Brick, Resource.Ore] * 3
@@ -299,14 +324,17 @@ class Board:
         land_resources.append(Resource.Desert)
         land_numbers.append(0)
 
-        lands = zip(land_resources, land_numbers, range(len(land_resources)))
+        ids = range(len(land_resources))
+
+        locations = [[] for _ in range(len(land_resources))]
+
+        lands = zip(land_resources, land_numbers, ids, locations)
         self._lands = [land for land in lands]
 
     def _create_graph(self):
         self._roads_and_colonies = networkx.Graph()
         self._roads_and_colonies.add_nodes_from(Board._vertices)
         self._roads_and_colonies.add_edges_from(Board._create_edges())
-        self._set_attributes()
 
     @staticmethod
     def _create_edges():
@@ -339,19 +367,7 @@ class Board:
         vertices_to_lands = self._create_vertices_to_lands_mapping()
         self._set_vertices_attributes(vertices_to_lands)
         self._set_edges_attributes(vertices_to_lands)
-
-    def _set_vertices_attributes(self, vertices_to_lands):
-        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_to_lands)
-        vertices_to_players = {v: (None, Colony.Uncolonised) for v in Board._vertices}
-        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_to_players)
-
-    def _set_edges_attributes(self, vertices_to_lands):
-        for edge in self._roads_and_colonies.edges_iter():
-            lands_intersection = [land for land in vertices_to_lands[edge[0]]
-                                  if land in vertices_to_lands[edge[1]]]
-            edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]
-            edge_attributes['lands'] = lands_intersection
-            edge_attributes['player'] = (None, Road.Unpaved)
+        self._set_lands_attributes(vertices_to_lands)
 
     def _create_vertices_to_lands_mapping(self):
         land_rows = [
@@ -375,6 +391,25 @@ class Board:
             Board._create_middle_vertex_mapping(vertices_map, vertices_rows[2], land_row)
             Board._create_top_vertex_mapping(vertices_map, vertices_rows[3], land_row)
         return vertices_map
+
+    def _set_vertices_attributes(self, vertices_to_lands):
+        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_to_lands)
+        vertices_to_players = {v: (None, Colony.Uncolonised) for v in Board._vertices}
+        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_to_players)
+
+    def _set_edges_attributes(self, vertices_to_lands):
+        for edge in self._roads_and_colonies.edges_iter():
+            lands_intersection = [land for land in vertices_to_lands[edge[0]]
+                                  if land in vertices_to_lands[edge[1]]]
+            edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]
+            edge_attributes['lands'] = lands_intersection
+            edge_attributes['player'] = (None, Road.Unpaved)
+
+    @staticmethod
+    def _set_lands_attributes(vertices_to_lands):
+        for location, lands in vertices_to_lands.items():
+            for land in lands:
+                land[3].append(location)
 
     @staticmethod
     def _create_top_vertex_mapping(vertices_map, vertices, lands):

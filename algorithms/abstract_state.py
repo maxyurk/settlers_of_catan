@@ -42,3 +42,8 @@ class AbstractState(abc.ABC):
     def throw_dice(self):
         """throws the dice, and gives players the cards they need"""
         pass
+
+    @abc.abstractmethod
+    def unthrow_dice(self, rolled_dice_number):
+        """reverts the dice throwing and cards giving"""
+        pass
