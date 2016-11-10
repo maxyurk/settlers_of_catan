@@ -5,18 +5,15 @@ from algorithms.abstract_state import AbstractState
 from game.abstract_player import AbstractPlayer
 
 
-def heuristic_value(state: AbstractState):
-    """evaluates the heuristic value of the current state
-    Returns:
-        Number: evaluated value of current state
-    """
-    pass
-
-
 def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
-               is_maximizing_player: Callable[[AbstractPlayer], bool]):
+               is_maximizing_player: Callable[[AbstractPlayer], bool],
+               evaluate_heuristic_value: Callable[[AbstractState], int]):
     """
     minimax with alpha-beta pruning
+    INITIALISATION:
+        alpha_beta(current_state, my_max_depth, -Math.inf, Math.inf,
+        lambda player: player == self, # or other way to identify maximizing player
+        my_heuristic_function)
     :param state: the Game, an interface with necessary methods (see AbstractState for details)
     :param depth: the current depth in the game tree
     :param alpha: the limit from above to the best move
@@ -25,6 +22,8 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
     player is the maximizing player, False otherwise
     It should be something like:
         lambda player: player == self
+    :param evaluate_heuristic_value: a function that returns a number to
+    heuristically evaluate the current state
     :return: best move
     """
     """
@@ -35,7 +34,7 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
     """
 
     if depth == 0 or state.is_final():
-        return heuristic_value(state)
+        return evaluate_heuristic_value(state)
 
     if is_maximizing_player(state.get_current_player()):
         v = -math.inf
@@ -59,6 +58,3 @@ def alpha_beta(state: AbstractState, depth: int, alpha: int, beta: int,
             if beta < alpha:
                 break
         return v
-
-# INIT:
-# alphabeta(root_node, max_depth, -infinity, infinity, TRUE)
