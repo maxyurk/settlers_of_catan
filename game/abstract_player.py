@@ -157,3 +157,49 @@ class AbstractPlayer(abc.ABC):
         return (self.resources[Resource.Ore] >= 1 and
                 self.resources[Resource.Wool] >= 1 and
                 self.resources[Resource.Grain] >= 1)
+
+    def remove_resources_for_road(self):
+        assert self.has_resources_for_road()
+        self.remove_resource(Resource.Brick)
+        self.remove_resource(Resource.Lumber)
+
+    def remove_resources_for_settlement(self):
+        assert self.has_resources_for_settlement()
+        self.remove_resource(Resource.Brick)
+        self.remove_resource(Resource.Lumber)
+        self.remove_resource(Resource.Wool)
+        self.remove_resource(Resource.Grain)
+
+    def remove_resources_for_city(self):
+        assert self.has_resources_for_city()
+        self.remove_resource(Resource.Ore, 3)
+        self.remove_resource(Resource.Grain, 2)
+
+    def remove_resources_for_development_card(self):
+        assert self.has_resources_for_development_card()
+        self.remove_resource(Resource.Ore)
+        self.remove_resource(Resource.Wool)
+        self.remove_resource(Resource.Grain)
+
+    def add_resources_for_road(self):
+        assert self.has_resources_for_road()
+        self.add_resource(Resource.Brick)
+        self.add_resource(Resource.Lumber)
+
+    def add_resources_for_settlement(self):
+        assert self.has_resources_for_settlement()
+        self.add_resource(Resource.Brick)
+        self.add_resource(Resource.Lumber)
+        self.add_resource(Resource.Wool)
+        self.add_resource(Resource.Grain)
+
+    def add_resources_for_city(self):
+        assert self.has_resources_for_city()
+        self.add_resource(Resource.Ore, 3)
+        self.add_resource(Resource.Grain, 2)
+
+    def add_resources_for_development_card(self):
+        assert self.has_resources_for_development_card()
+        self.add_resource(Resource.Ore)
+        self.add_resource(Resource.Wool)
+        self.add_resource(Resource.Grain)
