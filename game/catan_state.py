@@ -1,6 +1,7 @@
+import copy
 import random
 from typing import List, Callable
-from game.board import Board, Resource
+from game.board import Board, Resource, Road, Colony
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
 
@@ -31,6 +32,8 @@ class CatanState(AbstractState):
             players_points_count[self.player_with_largest_army] += 2
         if self.player_with_longest_road is not None:
             players_points_count[self.player_with_longest_road] += 2
+        for player in self.players:
+            players_points_count[player] += player.get_victory_point_development_cards_count()
 
         highest_score = max(players_points_count.values())
         return highest_score >= 10
