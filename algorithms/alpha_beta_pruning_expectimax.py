@@ -40,9 +40,7 @@ class AlphaBetaExpectimax:
         """
         expectimax with alpha-beta pruning
         INITIALISATION:
-            alpha_beta(self.max_depth, -Math.inf, Math.inf,
-            lambda player: player == self, # or other way to identify maximizing player
-            my_heuristic_function)
+            alpha_beta(self.max_depth, -Math.inf, Math.inf, True)
         :param depth: the current depth in the game tree
         :param alpha: the limit from above to the best move
         :param beta: the limit from below to the best move

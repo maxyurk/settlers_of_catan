@@ -1,8 +1,9 @@
 from unittest import TestCase
+
 from algorithms.abstract_state import AbstractState
 from game.abstract_player import AbstractPlayer
 from game.catan_state import CatanState
-from game.board import *
+from game.pieces import Colony
 
 
 class FakePlayer(AbstractPlayer):

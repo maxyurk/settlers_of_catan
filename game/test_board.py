@@ -1,5 +1,7 @@
 from unittest import TestCase
+
 from game.board import *
+from game.pieces import Colony, Road
 
 
 class TestBoard(TestCase):

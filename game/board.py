@@ -1,9 +1,12 @@
-import networkx
 import enum
 import random
-from logging import warning
 from itertools import chain
+from logging import warning
 from typing import List, Tuple, Set, Dict
+
+import networkx
+
+from game.pieces import Colony, Road
 
 """
 Structure
@@ -58,18 +61,6 @@ class Resource(enum.Enum):
     Grain = 4
     Ore = 5
     Desert = 6
-
-
-class Colony(enum.Enum):
-    """the enumeration is also used to specify the points colony type is worth"""
-    Uncolonised = 0
-    Settlement = 1
-    City = 2
-
-
-class Road(enum.Enum):
-    Paved = 1
-    Unpaved = 2
 
 
 class Harbor(enum.Enum):

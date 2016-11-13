@@ -1,7 +1,8 @@
 import copy
 import random
 from typing import List, Callable
-from game.board import Board, Resource, Road, Colony
+from game.board import Board, Resource
+from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
 from game.development_cards import DevelopmentCard
@@ -157,7 +158,7 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
-            if curr_player.has_resources_for_road():
+            if curr_player.can_pave_road():
                 for path_nearby in self.board.get_unpaved_paths_near_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
@@ -173,7 +174,7 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
-            if curr_player.has_resources_for_settlement():
+            if curr_player.can_settle_settlement():
                 for settleable_location in self.board.get_settleable_locations_by_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_settlements.append(settleable_location)
@@ -189,7 +190,7 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
-            if curr_player.has_resources_for_city():
+            if curr_player.can_settle_city():
                 for cityable_location in self.board.get_settlements_by_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities.append(cityable_location)
@@ -205,7 +206,8 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
-            if curr_player.has_resources_for_development_card():
+            if (curr_player.has_resources_for_development_card() and
+                    len(self.dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
@@ -231,6 +233,7 @@ class CatanState(AbstractState):
             self.board.set_location(curr_player, loc2, Colony.City)
             curr_player.remove_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
+
             # TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
             curr_player.remove_resources_for_development_card()
 

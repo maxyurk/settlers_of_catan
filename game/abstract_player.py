@@ -3,11 +3,17 @@ import abc
 from algorithms.abstract_state import AbstractState
 from game.board import Resource
 from game.development_cards import DevelopmentCard
+from game.pieces import *
 
 
 class AbstractPlayer(abc.ABC):
     def __init__(self):
         self.resources = {r: 0 for r in Resource}
+        self.pieces = {
+            Colony.Settlement: 5,
+            Colony.City: 4,
+            Road.Paved: 15
+        }
         self.unexposed_development_cards = {card: 0 for card in DevelopmentCard}
         self.exposed_development_cards = {card: 0 for card in DevelopmentCard}
 
@@ -113,15 +119,16 @@ class AbstractPlayer(abc.ABC):
                 return True
         return False
 
-    def has_resources_for_road(self):
+    def can_pave_road(self):
         """
         indicate whether there are enough resources to pave a road
         :return: True if enough resources to pave a road, False otherwise
         """
         return (self.resources[Resource.Brick] >= 1 and
-                self.resources[Resource.Lumber] >= 1)
+                self.resources[Resource.Lumber] >= 1 and
+                self.pieces[Road.Paved] > 0)
 
-    def has_resources_for_settlement(self):
+    def can_settle_settlement(self):
         """
         indicate whether there are enough resources to build a settlement
         :return: True if enough resources to build a settlement, False otherwise
@@ -129,19 +136,23 @@ class AbstractPlayer(abc.ABC):
         return (self.resources[Resource.Brick] >= 1 and
                 self.resources[Resource.Lumber] >= 1 and
                 self.resources[Resource.Wool] >= 1 and
-                self.resources[Resource.Grain] >= 1)
+                self.resources[Resource.Grain] >= 1 and
+                self.pieces[Colony.Settlement] > 0)
 
-    def has_resources_for_city(self):
+    def can_settle_city(self):
         """
         indicate whether there are enough resources to build a city
         :return: True if enough resources to build a city, False otherwise
         """
         return (self.resources[Resource.Ore] >= 3 and
-                self.resources[Resource.Grain] >= 2)
+                self.resources[Resource.Grain] >= 2 and
+                self.pieces[Colony.City] > 0)
 
     def has_resources_for_development_card(self):
         """
         indicate whether there are enough resources to buy a development card
+        NOTE: unlike can_* methods, this method doesn't check there are needed
+        pieces (in this case develpoment-cards in the deck)
         :return: True if enough resources to buy a development card, False otherwise
         """
         return (self.resources[Resource.Ore] >= 1 and
@@ -149,19 +160,19 @@ class AbstractPlayer(abc.ABC):
                 self.resources[Resource.Grain] >= 1)
 
     def remove_resources_for_road(self):
-        assert self.has_resources_for_road()
+        assert self.can_pave_road()
         self.remove_resource(Resource.Brick)
         self.remove_resource(Resource.Lumber)
 
     def remove_resources_for_settlement(self):
-        assert self.has_resources_for_settlement()
+        assert self.can_settle_settlement()
         self.remove_resource(Resource.Brick)
         self.remove_resource(Resource.Lumber)
         self.remove_resource(Resource.Wool)
         self.remove_resource(Resource.Grain)
 
     def remove_resources_for_city(self):
-        assert self.has_resources_for_city()
+        assert self.can_settle_city()
         self.remove_resource(Resource.Ore, 3)
         self.remove_resource(Resource.Grain, 2)
 
@@ -172,19 +183,19 @@ class AbstractPlayer(abc.ABC):
         self.remove_resource(Resource.Grain)
 
     def add_resources_for_road(self):
-        assert self.has_resources_for_road()
+        assert self.can_pave_road()
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
 
     def add_resources_for_settlement(self):
-        assert self.has_resources_for_settlement()
+        assert self.can_settle_settlement()
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)
 
     def add_resources_for_city(self):
-        assert self.has_resources_for_city()
+        assert self.can_settle_city()
         self.add_resource(Resource.Ore, 3)
         self.add_resource(Resource.Grain, 2)
 
