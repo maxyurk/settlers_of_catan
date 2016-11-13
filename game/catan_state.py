@@ -23,6 +23,7 @@ class CatanState(AbstractState):
         # same amount of knights-cards used/longest road length
         # i.e when player 1 paved 5 roads, and player too as-well,
         # but only after player 1.
+        # TODO consider making both of these properties stacks, for make_move/unamake_move
         self.player_with_largest_army = None
         self.player_with_longest_road = None
 
@@ -80,8 +81,8 @@ class CatanState(AbstractState):
         :return: the dice throwing result (a number in the range [2,12])
         """
         rolled_dice_number = random.randint(2, 12)
-        self._on_thrown_dice(rolled_dice_number, AbstractPlayer.add_resource)
-
+        self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.add_resource)
+        # TODO handle moving robber when rolled 7
         return rolled_dice_number
 
     def unthrow_dice(self, rolled_dice_number):
@@ -89,18 +90,23 @@ class CatanState(AbstractState):
         :param rolled_dice_number: the number to undo it's cards giving
         :return: None
         """
-        self._on_thrown_dice(rolled_dice_number, AbstractPlayer.remove_resource)
+        # TODO handle unmoving robber when rolled 7
+        self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.remove_resource)
 
-    def _on_thrown_dice(self, rolled_dice_number,
-                        add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
+    def _on_thrown_dice_update_resources(
+            self, rolled_dice_number,
+            add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
         """
-        auxilary method to give/take the cards need for specified number
+        auxiliary method to give/take the cards need for specified number
         :param rolled_dice_number: the number to give/take card by
         :param add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]
         a function that gives/takes from the player the given amount of the given resource
         it should either be AbstractPlayer.add_resource, or AbstractPlayer.remove_resource
         :return: None
         """
+        if rolled_dice_number == 7:
+            return
+
         players_to_resources = \
             self.board.get_players_to_resources_by_number(rolled_dice_number)
 

@@ -18,7 +18,7 @@ THe array will hold the "data":
  -each item will be a hexagon, that consists of:
     --the element (Wheat, Metal, Clay or Wood)
     --the number (2-12)
-    --Is there a burglar on the hexagon or not
+    --Is there a robber on the hexagon or not
 each edge & vertex in the graph will be bi-directionally linked to it's hexagons, for easy traversal
 
 Example
@@ -77,12 +77,14 @@ Location = int
 A place that can be colonised (with a settlement, and later with a city)
 """
 
-Path = Tuple[int, int]
+Path = Tuple[Location, Location]
 """Path is an edge in the graph
 A place that a road can be paved in
 """
 
-Land = Tuple[Resource, int, int, List[Location]]
+RolledDiceNumber = int
+ID = int
+Land = Tuple[Resource, RolledDiceNumber, ID, List[Location]]
 """Land is an element in the lands array
 A hexagon in the catan map, that has (in this order):
  -a resource type
@@ -93,9 +95,6 @@ A hexagon in the catan map, that has (in this order):
 
 
 class Board:
-    _player = 'player'
-    _lands = 'lands'
-
     def __init__(self):
         self._create_and_shuffle_lands()
         self._create_graph()
@@ -144,11 +143,24 @@ class Board:
     def get_settlements_by_player(self, player) -> List[Location]:
         """
         get player's settlements on map that this player can settle with a city
+        unlike get_settled_locations_by_player, this method returns only the
+        settlements' locations. It doesn't return cities locations
         :param player: the player to get settlements
         :return: list of locations on map that the player can settle a city on
         """
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v]['player'] == (player, Colony.Settlement)]
+
+    def get_settled_locations_by_player(self, player) -> List[Location]:
+        """
+        get the colonies owned by given player
+        unlike get_settlements_by_player, this method returns both the
+        settlements' and the cities' locations
+        :param player: the player to get the colonies of
+        :return: list of locations that have colonies of the given player
+        """
+        return [v for v in self._roads_and_colonies.nodes()
+                if self._roads_and_colonies.node[v]['player'][0] == player]
 
     def get_unpaved_paths_near_player(self, player) -> List[Path]:
         """
@@ -165,15 +177,6 @@ class Board:
         return [(u, v) for u in locations_non_colonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
                 if self._roads_and_colonies[u][v]['player'][0] is None]
-
-    def get_settled_locations_by_player(self, player) -> List[Location]:
-        """
-        get the colonies owned by given player
-        :param player: the player to get the colonies of
-        :return: list of locations that have colonies of the given player
-        """
-        return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies.node[v]['player'][0] == player]
 
     def get_surrounding_resources(self, location: Location) -> List[Land]:
         """
@@ -224,14 +227,15 @@ class Board:
                 Board._compute_longest_road_length(sub_graph_of_player, w, set()))
         return max_road_length
 
-    def get_players_to_resources_by_number(self, number: int) -> Dict:
+    def get_players_to_resources_by_number(self, number: RolledDiceNumber) -> Dict:
         """
         get the resources that players get when the dice roll specified number
         :param number: the number the dice rolled
         :return: Dict[player, Dict[Resource, int]], a dictionary of plaers to
         the resources they should receive
         """
-        lands_with_this_number = [land for land in self._lands if land[1] == number]
+        lands_with_this_number = [land for land in self._lands
+                                  if land[1] == number and self._robber_land != land]
 
         players_to_resources = {player: {resource: 0 for resource in Resource}
                                 for player in self._player_colonies_points.keys()}
@@ -288,6 +292,21 @@ class Board:
             player = None
             road = Road.Unpaved
         self._roads_and_colonies[path[0]][path[1]]['player'] = (player, road)
+
+    def get_robber_land(self) -> Land:
+        """
+        get the land where the robber currently lays
+        :return: Land, where the robber is located
+        """
+        return self._robber_land
+
+    def set_robber_land(self, land: Land):
+        """
+        set the land where the robber lays
+        :param land: the land where the robber will be located
+        :return: None
+        """
+        self._robber_land = land
 
     def is_colonised(self, location: Location):
         """
@@ -352,6 +371,9 @@ class Board:
 
         lands = zip(land_resources, land_numbers, ids, locations)
         self._lands = [land for land in lands]
+        self._robber_land = self._lands[-1]
+        # Note how the robber location relies on the fact that the last
+        # land in the list is the desert
 
     def _create_graph(self):
         self._roads_and_colonies = networkx.Graph()

@@ -50,7 +50,7 @@ class TestCatanState(TestCase):
 
         # this is what happens in throw_dice, except I decided what the number is,
         # instead of "throwing the dice"
-        self.state._on_thrown_dice(land_number, AbstractPlayer.add_resource)
+        self.state._on_thrown_dice_update_resources(land_number, AbstractPlayer.add_resource)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
@@ -61,7 +61,7 @@ class TestCatanState(TestCase):
 
         # this is what happens in throw_dice, except I decided what the number is,
         # instead of "throwing the dice"
-        self.state._on_thrown_dice(land_number, AbstractPlayer.add_resource)
+        self.state._on_thrown_dice_update_resources(land_number, AbstractPlayer.add_resource)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
