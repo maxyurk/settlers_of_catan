@@ -91,8 +91,10 @@ class AbstractPlayer(abc.ABC):
         self.exposed_development_cards[card] -= 1
 
     def get_unexposed_development_cards(self):
-        # TODO implement (make sure it works with the "get next moves" implementation, don't return victory point cards)
-        pass
+        for card_type, amount in self.unexposed_development_cards.items():
+            for _ in range(amount):
+                if card_type != DevelopmentCard.VictoryPoint:
+                    yield card_type
 
     def get_exposed_knights_count(self) -> int:
         """
