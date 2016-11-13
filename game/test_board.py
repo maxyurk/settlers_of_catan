@@ -50,8 +50,8 @@ class TestBoard(TestCase):
         self.assertIn(7, locations)
         self.assertIn(11, locations)
 
-    def test_get_unpaved_roads_near_player(self):
-        paths = self.b.get_unpaved_roads_near_player(self.player1)
+    def test_get_unpaved_paths_near_player(self):
+        paths = self.b.get_unpaved_paths_near_player(self.player1)
 
         self.assertEqual(len(paths), 4)
         self.assertIn((4, 1), paths)

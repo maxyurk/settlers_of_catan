@@ -199,12 +199,25 @@ class Board:
         return 0
 
     def get_longest_road_length_of_player(self, player) -> int:
+        """
+        get the longest road length of specified player.
+        NOTE: if player has less than 5 roads in total, it returns 0
+        that's because it means he can't have the "longest-road" card anyways,
+        so computing the longest road is unnecessary
+        :param player: the player fir whom the longest road is calculated
+        :return: the length of the longest road of specified player
+        """
         roads_paved_by_player = [
             e for e in self._roads_and_colonies.edges_iter()
             if self.has_road_been_paved_by(player, e)]
-        sub_graph_of_player = networkx.Graph(roads_paved_by_player)
 
+        if len(roads_paved_by_player) < 5:
+            return 0
+
+        sub_graph_of_player = networkx.Graph(roads_paved_by_player)
         max_road_length = 0
+        # TODO think if perhaps only some of the nodes can be checked
+        # (perhaps those with degree 1 + those that are in a cycle, or something like that)
         for w in sub_graph_of_player.nodes():
             max_road_length = max(
                 max_road_length,
