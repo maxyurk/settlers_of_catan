@@ -7,6 +7,16 @@ from game.abstract_player import AbstractPlayer
 from game.development_cards import DevelopmentCard
 
 
+class CatanMove(AbstractMove):
+    def __init__(self):
+        # TODO add resource exchange mechanism
+        self.development_cards_to_be_exposed = []
+        self.paths_to_be_paved = []
+        self.locations_to_be_set_to_settlements = []
+        self.locations_to_be_set_to_cities = []
+        self.development_cards_to_be_purchased_count = 0
+
+
 class CatanState(AbstractState):
     def __init__(self, players: List[AbstractPlayer]):
         self.players = players
@@ -78,11 +88,21 @@ class CatanState(AbstractState):
         return self.players[self.current_player_index]
         pass
 
-    def throw_dice(self):
-        """throws the dice, and gives players the cards they need
+    numbers_to_probabilities = {}
+    for i, p in zip(range(2, 7), range(1, 6)):
+        numbers_to_probabilities[i] = p / 36
+        numbers_to_probabilities[14 - i] = p / 36
+    numbers_to_probabilities[7] = 6 / 36
+
+    def get_numbers_to_probabilities(self):
+        return CatanState.numbers_to_probabilities
+
+    def throw_dice(self, rolled_dice_number: int=None):
+        """throws the dice (if no number is given), and gives players the cards they need
         :return: the dice throwing result (a number in the range [2,12])
         """
-        rolled_dice_number = random.randint(2, 12)
+        if rolled_dice_number is None:
+            rolled_dice_number = random.randint(2, 12)
         self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.add_resource)
         # TODO handle moving robber when rolled 7
         return rolled_dice_number
@@ -232,13 +252,3 @@ class CatanState(AbstractState):
         for count in range(0, move.development_cards_to_be_purchased_count):
             # TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
             curr_player.add_resources_for_development_card()
-
-
-class CatanMove(AbstractMove):
-    def __init__(self):
-        # TODO add resource exchange mechanism
-        self.development_cards_to_be_exposed = []
-        self.paths_to_be_paved = []
-        self.locations_to_be_set_to_settlements = []
-        self.locations_to_be_set_to_cities = []
-        self.development_cards_to_be_purchased_count = 0

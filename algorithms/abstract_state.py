@@ -21,7 +21,7 @@ class AbstractState(abc.ABC):
         Returns:
             List of AbstractMove: a list of the next moves
         """
-        yield None
+        return []
 
     @abc.abstractmethod
     def make_move(self, move: AbstractMove):
@@ -39,8 +39,13 @@ class AbstractState(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def throw_dice(self):
-        """throws the dice, and gives players the cards they need"""
+    def get_numbers_to_probabilities(self):
+        """returns a map of (items to send to throw_dice) -> (their probability)"""
+        pass
+
+    @abc.abstractmethod
+    def throw_dice(self, rolled_dice_number: int=None):
+        """throws the dice(if no number specified), and gives players the cards they need"""
         pass
 
     @abc.abstractmethod
