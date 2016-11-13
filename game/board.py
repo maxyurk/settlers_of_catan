@@ -72,15 +72,31 @@ class Road(enum.Enum):
     Unpaved = 2
 
 
+class Harbor(enum.Enum):
+    """
+    Harbor types. Harbors are locations one can exchange resources in.
+    specific harbors at 1:2 ratio (1 specific harbor per Resource type)
+    generic at 1:3 ratio (4 generic harbors)
+    """
+    HarborBrick = 0
+    HarborLumber = 1
+    HarborWool = 2
+    HarborGrain = 3
+    HarborOre = 4
+    HarborGeneric = 5
+
+
 Location = int
 """Location is a vertex in the graph
 A place that can be colonised (with a settlement, and later with a city)
 """
 
+
 Path = Tuple[Location, Location]
 """Path is an edge in the graph
 A place that a road can be paved in
 """
+
 
 RolledDiceNumber = int
 ID = int
@@ -99,6 +115,7 @@ class Board:
         self._create_and_shuffle_lands()
         self._create_graph()
         self._set_attributes()
+        self._create_harbors()
         self._player_colonies_points = {}
 
     def get_all_settleable_locations(self) -> List[Location]:
@@ -379,6 +396,29 @@ class Board:
         self._roads_and_colonies = networkx.Graph()
         self._roads_and_colonies.add_nodes_from(Board._vertices)
         self._roads_and_colonies.add_edges_from(Board._create_edges())
+
+    def _create_harbors(self):
+        u, v = (3, 0)
+        wrapping_edges = [(u, v)]
+        while (u, v) != (7, 3):
+            w = next(w for w in self._roads_and_colonies.neighbors(v)
+                     if w != u and self._is_wrapping_edge(v, w))
+            wrapping_edges.append((v, w))
+            u, v = v, w
+
+        harbors = [harbor for harbor in Harbor] + 3 * [Harbor.HarborGeneric]
+        random.shuffle(harbors)
+
+        offsets = [4] * 3 + [3] * 6
+        random.shuffle(offsets)
+        i = -3
+        for offset, harbor in zip(offsets, harbors):
+            i += offset
+            u, v = wrapping_edges[i]
+            self._roads_and_colonies[u][v]['harbor'] = harbor
+
+    def _is_wrapping_edge(self, u, v):
+        return len(self._roads_and_colonies[u][v]['lands']) == 1
 
     @staticmethod
     def _create_edges():

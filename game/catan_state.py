@@ -13,9 +13,11 @@ class CatanState(AbstractState):
         self.current_player_index = 0
         self.board = Board()
 
-        self.dev_cards = []
-        for card in DevelopmentCard:
-            self.dev_cards += [card] * card.value
+        self.dev_cards = [DevelopmentCard.Knight] * 15 +\
+                         [DevelopmentCard.VictoryPoint] * 5 +\
+                         [DevelopmentCard.RoadBuilding,
+                          DevelopmentCard.Monopoly,
+                          DevelopmentCard.YearOfPlenty] * 2
         random.shuffle(self.dev_cards)
 
         # we must preserve these in the state, since it's possible a

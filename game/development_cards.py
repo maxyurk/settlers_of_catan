@@ -3,11 +3,9 @@ import enum
 
 class DevelopmentCard(enum.Enum):
     """Development-cards as specified in the game
-    the value of each dev-card type is it's number of occurrences
-    in the cards stack. i.e. the are 15 Knight cards in the stack
     """
-    Knight = 15
-    VictoryPoint = 5
-    RoadBuilding = 2
-    Monopoly = 2
-    YearOfPlenty = 2
+    Knight = 0          # 15 cards
+    VictoryPoint = 1    # 5  cards
+    RoadBuilding = 2    # 2  cards
+    Monopoly = 3        # 2  cards
+    YearOfPlenty = 4    # 2  cards
