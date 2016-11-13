@@ -1,16 +1,8 @@
 import abc
-import enum
-from algorithms import abstract_state
+
 from algorithms.abstract_state import AbstractState
 from game.board import Resource
-
-
-class DevelopmentCard(enum.Enum):
-    Knight = 1  # 15 cards
-    VictoryPoint = 2  # 5 cards
-    RoadBuilding = 3  # 2 cards
-    Monopoly = 4  # 2 cards
-    YearOfPlenty = 5  # 2 cards
+from game.development_cards import DevelopmentCard
 
 
 class AbstractPlayer(abc.ABC):

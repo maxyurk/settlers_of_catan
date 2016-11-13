@@ -4,6 +4,7 @@ from typing import List, Callable
 from game.board import Board, Resource, Road, Colony
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
+from game.development_cards import DevelopmentCard
 
 
 class CatanState(AbstractState):
@@ -11,6 +12,11 @@ class CatanState(AbstractState):
         self.players = players
         self.current_player_index = 0
         self.board = Board()
+
+        self.dev_cards = []
+        for card in DevelopmentCard:
+            self.dev_cards += [card] * card.value
+        random.shuffle(self.dev_cards)
 
         # we must preserve these in the state, since it's possible a
         # player has one of the special cards, while some-one has the
