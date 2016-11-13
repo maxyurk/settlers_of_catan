@@ -183,24 +183,20 @@ class AbstractPlayer(abc.ABC):
         self.remove_resource(Resource.Grain)
 
     def add_resources_for_road(self):
-        assert self.can_pave_road()
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
 
     def add_resources_for_settlement(self):
-        assert self.can_settle_settlement()
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)
 
     def add_resources_for_city(self):
-        assert self.can_settle_city()
         self.add_resource(Resource.Ore, 3)
         self.add_resource(Resource.Grain, 2)
 
     def add_resources_for_development_card(self):
-        assert self.has_resources_for_development_card()
         self.add_resource(Resource.Ore)
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)

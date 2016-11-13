@@ -1,7 +1,7 @@
 import enum
 import random
 from itertools import chain
-from logging import warning
+from logging import error
 from typing import List, Tuple, Set, Dict
 
 import networkx
@@ -267,11 +267,10 @@ class Board:
         :param colony: the colony type to put (settlement/city)
         :return: None
         """
-        if ((colony == Colony.Uncolonised and player is not None) or
-                (player is None and colony != Colony.Uncolonised)):
-            warning(' {} bad arguments: ({}, {}) is not a logical combination.'
-                    ' Treated as (None, Colony.Uncolonised)'
-                    .format(Board.set_location.__name__, player, colony))
+        if player is None and colony != Colony.Uncolonised:
+            error('{} bad arguments: ({}, {}) is not a logical combination.'
+                  ' Treated as (None, Colony.Uncolonised)'
+                  .format(Board.set_location.__name__, player, colony))
             player = None
             colony = Colony.Uncolonised
 
@@ -292,11 +291,10 @@ class Board:
         :param road: road type. Road.Paved to pave, Road.Unpaved to un-pave
         :return: None
         """
-        if ((road == Road.Unpaved and player is not None) or
-                (player is None and road != Road.Unpaved)):
-            warning(' {} bad arguments: ({}, {}) is not a logical combination.'
-                    ' Treated as (None, Road.Unpaved)'
-                    .format(Board.set_path.__name__, player, road))
+        if player is None and road != Road.Unpaved:
+            error(' {} bad arguments: ({}, {}) is not a logical combination.'
+                  ' Treated as (None, Road.Unpaved)'
+                  .format(Board.set_path.__name__, player, road))
             player = None
             road = Road.Unpaved
         self._roads_and_colonies[path[0]][path[1]]['player'] = (player, road)

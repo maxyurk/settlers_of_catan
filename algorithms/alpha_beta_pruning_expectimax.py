@@ -22,10 +22,10 @@ class AlphaBetaExpectimax:
         heuristically evaluate the current state
         :return: best move
         """
-        self.state = state
-        self.max_depth = max_depth
-        self.is_maximizing_player = is_maximizing_player
-        self.evaluate_heuristic_value = evaluate_heuristic_value
+        self._state = state
+        self._max_depth = max_depth
+        self._is_maximizing_player = is_maximizing_player
+        self._evaluate_heuristic_value = evaluate_heuristic_value
 
     def get_best_move(self):
         """
@@ -33,7 +33,7 @@ class AlphaBetaExpectimax:
         with given heuristic function
         :return: the best move
         """
-        _, best_move = self._alpha_beta_expectimax(self.max_depth, -math.inf, math.inf, True)
+        _, best_move = self._alpha_beta_expectimax(self._max_depth, -math.inf, math.inf, True)
         return best_move
 
     def _alpha_beta_expectimax(self, depth: int, alpha: int, beta: int, is_random_event: bool):
@@ -48,27 +48,29 @@ class AlphaBetaExpectimax:
         :return: best move
         """
 
-        if depth == 0 or self.state.is_final():
-            return self.evaluate_heuristic_value(self.state), None
+        if depth == 0 or self._state.is_final():
+            return self._evaluate_heuristic_value(self._state), None
 
         if is_random_event:
             v = 0
-            for number, probability in self.state.get_numbers_to_probabilities.items():
-                self.state.throw_dice(rolled_dice_number=number)
-                v += probability * self._alpha_beta_expectimax(depth - 1, alpha, beta, False)
-                self.state.unthrow_dice(rolled_dice_number=number)
+
+            for number, probability in self._state.get_numbers_to_probabilities().items():
+                self._state.throw_dice(rolled_dice_number=number)
+                u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, False)
+                v += probability * u
+                self._state.unthrow_dice(rolled_dice_number=number)
             return v, None
-        elif self.is_maximizing_player(self.state.get_current_player()):
+        elif self._is_maximizing_player(self._state.get_current_player()):
             v = -math.inf
             best_move = None
 
-            for move in self.state.get_next_moves():
-                self.state.make_move(move)
-                u, _ = max(v, self._alpha_beta_expectimax(depth - 1, alpha, beta, True))
+            for move in self._state.get_next_moves():
+                self._state.make_move(move)
+                u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
                 if u > v:
                     v = u
                     best_move = move
-                self.state.unmake_move(move)
+                self._state.unmake_move(move)
 
                 alpha = max(v, alpha)
                 if beta <= alpha:
@@ -76,10 +78,11 @@ class AlphaBetaExpectimax:
             return v, best_move
         else:
             v = math.inf
-            for move in self.state.get_next_moves():
-                self.state.make_move(move)
-                v, _ = min(v, self._alpha_beta_expectimax(depth - 1, alpha, beta, True))
-                self.state.unmake_move(move)
+            for move in self._state.get_next_moves():
+                self._state.make_move(move)
+                u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
+                v = min(v, u)
+                self._state.unmake_move(move)
 
                 beta = min(v, beta)
                 if beta <= alpha:

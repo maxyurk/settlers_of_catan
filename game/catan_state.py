@@ -87,7 +87,6 @@ class CatanState(AbstractState):
     def get_current_player(self):
         """returns the player that should play next"""
         return self.players[self.current_player_index]
-        pass
 
     numbers_to_probabilities = {}
     for i, p in zip(range(2, 7), range(1, 6)):
