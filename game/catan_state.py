@@ -156,7 +156,7 @@ class CatanState(AbstractState):
         for move in moves:
             self._pretend_to_make_a_move(move)
             if curr_player.has_resources_for_city():
-                for cityable_location in self.board.get_cityable_settlements_by_player(curr_player):
+                for cityable_location in self.board.get_settlements_by_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities.append(cityable_location)
                     new_moves.append(new_move)

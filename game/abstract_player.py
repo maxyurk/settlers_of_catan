@@ -16,10 +16,8 @@ class DevelopmentCard(enum.Enum):
 class AbstractPlayer(abc.ABC):
     def __init__(self):
         self.resources = {r: 0 for r in Resource}
-        self.unexposed_development_cards = {card: 0 for card in
-                                            DevelopmentCard}  # TODO make sure it's what I think it is
-        self.exposed_development_cards = {card: 0 for card in
-                                          DevelopmentCard}  # TODO make sure it's what I think it is
+        self.unexposed_development_cards = {card: 0 for card in DevelopmentCard}
+        self.exposed_development_cards = {card: 0 for card in DevelopmentCard}
 
     @abc.abstractmethod
     def choose_move(self, state: AbstractState):

@@ -141,16 +141,14 @@ class Board:
                 coloniseable.append(u)
         return coloniseable
 
-    def get_cityable_settlements_by_player(self, player) -> List[Location]:
+    def get_settlements_by_player(self, player) -> List[Location]:
         """
         get player's settlements on map that this player can settle with a city
         :param player: the player to get settlements
         :return: list of locations on map that the player can settle a city on
         """
-        # TODO verify with arye this is correct
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v]['player'] == (player, Colony.Settlement)]
-
 
     def get_unpaved_paths_near_player(self, player) -> List[Path]:
         """
