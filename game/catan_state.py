@@ -171,8 +171,7 @@ class CatanState(AbstractState):
             self._revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        moves.extend(new_moves)
-        return self._get_all_possible_paths_moves(moves)
+        return moves + self._get_all_possible_paths_moves(new_moves)
 
     def _get_all_possible_settlements_moves(self, moves: List[CatanMove]):
         curr_player = self._players[self._current_player_index]
@@ -187,8 +186,7 @@ class CatanState(AbstractState):
             self._revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        moves.extend(new_moves)
-        return self._get_all_possible_settlements_moves(moves)
+        return moves + self._get_all_possible_settlements_moves(new_moves)
 
     def _get_all_possible_cities_moves(self, moves: List[CatanMove]):
         curr_player = self._players[self._current_player_index]
@@ -203,8 +201,7 @@ class CatanState(AbstractState):
             self._revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        moves.extend(new_moves)
-        return self._get_all_possible_cities_moves(moves)
+        return moves + self._get_all_possible_cities_moves(new_moves)
 
     def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]):
         curr_player = self._players[self._current_player_index]
@@ -220,7 +217,7 @@ class CatanState(AbstractState):
         if not new_moves:  # End of recursion
             return moves
         moves.extend(new_moves)
-        return self._get_all_possible_development_cards_purchase_moves(moves)
+        return moves + self._get_all_possible_development_cards_purchase_moves(new_moves)
 
     def _pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
