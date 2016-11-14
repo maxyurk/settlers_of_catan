@@ -47,12 +47,12 @@ class CatanMove(AbstractMove):
         # this does almost everything, the rest is done in this method
         state.revert_pretend_to_make_a_move(self)
 
-        curr_player = state.get_current_player()
+        player = state.get_current_player()
         # for card in self.development_cards_to_be_exposed:
         #       TODO revert side effect from card
         # TODO figure out when is it actually done
         # for count in range(self.development_cards_to_be_purchased_count):
-        #       TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
+        #       TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
 
 
 class CatanState(AbstractState):
@@ -83,22 +83,23 @@ class CatanState(AbstractState):
         Returns:
             bool: indicating whether the current state is a final one
         """
-        players_points_count = {player: self._board.get_colonies_score(player)
-                                for player in self._players}
-
-        player, _ = self._get_largest_army_player_and_size()
-        if player is not None:
-            players_points_count[player] += 2
-
-        player, _ = self._get_longest_road_player_and_length()
-        if player is not None:
-            players_points_count[player] += 2
-
-        for player in self._players:
-            players_points_count[player] += player.get_victory_point_development_cards_count()
+        players_points_count = self.get_scores_by_player()
 
         highest_score = max(players_points_count.values())
         return highest_score >= 10
+
+    def get_scores_by_player(self):
+        players_points_count = {player: self._board.get_colonies_score(player)
+                                for player in self._players}
+        player, _ = self._get_largest_army_player_and_size()
+        if player is not None:
+            players_points_count[player] += 2
+        player, _ = self._get_longest_road_player_and_length()
+        if player is not None:
+            players_points_count[player] += 2
+        for player in self._players:
+            players_points_count[player] += player.get_victory_point_development_cards_count()
+        return players_points_count
 
     def get_next_moves(self):
         """computes the next moves available from the current state
@@ -132,13 +133,12 @@ class CatanState(AbstractState):
 
     def unmake_move(self, move: CatanMove):
         """reverts specified move"""
+        self._current_player_index = (self._current_player_index - 1) % len(self._players)
 
         move.revert(self)
 
         if move.did_get_largest_army_card:
             self._player_with_longest_road.pop()
-
-        self._current_player_index = (self._current_player_index - 1) % len(self._players)
 
     def get_current_player(self):
         """returns the player that should play next"""
@@ -174,9 +174,8 @@ class CatanState(AbstractState):
         # TODO handle unmoving robber when rolled 7
         self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.remove_resource)
 
-    def _on_thrown_dice_update_resources(
-            self, rolled_dice_number,
-            add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
+    def _on_thrown_dice_update_resources(self, rolled_dice_number,
+                                         add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
         """
         auxiliary method to give/take the cards need for specified number
         :param rolled_dice_number: the number to give/take card by
@@ -188,8 +187,7 @@ class CatanState(AbstractState):
         if rolled_dice_number == 7:
             return
 
-        players_to_resources = \
-            self._board.get_players_to_resources_by_number(rolled_dice_number)
+        players_to_resources = self._board.get_players_to_resources_by_number(rolled_dice_number)
 
         for player, resources_to_amount in players_to_resources.items():
             for resource, resource_amount in resources_to_amount.items():
@@ -217,28 +215,27 @@ class CatanState(AbstractState):
         return self._player_with_largest_army[-1]
 
     def _get_all_possible_development_cards_exposure_moves(self, moves: List[CatanMove]):
-        curr_player = self._players[self._current_player_index]
+        player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if curr_player.has_unexposed_development_card():
-                for unexposed_development_card in curr_player.get_unexposed_development_cards():
+            if player.has_unexposed_development_card():
+                for unexposed_development_card in player.get_unexposed_development_cards():
                     new_move = copy.deepcopy(move)
                     new_move.development_cards_to_be_exposed.append(unexposed_development_card)
                     new_moves.append(new_move)
             self.revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        moves.extend(new_moves)
-        return self._get_all_possible_development_cards_exposure_moves(moves)
+        return moves + self._get_all_possible_development_cards_exposure_moves(new_moves)
 
     def _get_all_possible_paths_moves(self, moves: List[CatanMove]):
-        curr_player = self._players[self._current_player_index]
+        player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if curr_player.can_pave_road():
-                for path_nearby in self._board.get_unpaved_paths_near_player(curr_player):
+            if player.can_pave_road():
+                for path_nearby in self._board.get_unpaved_paths_near_player(player):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
                     new_moves.append(new_move)
@@ -248,12 +245,12 @@ class CatanState(AbstractState):
         return moves + self._get_all_possible_paths_moves(new_moves)
 
     def _get_all_possible_settlements_moves(self, moves: List[CatanMove]):
-        curr_player = self._players[self._current_player_index]
+        player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if curr_player.can_settle_settlement():
-                for settleable_location in self._board.get_settleable_locations_by_player(curr_player):
+            if player.can_settle_settlement():
+                for settleable_location in self._board.get_settleable_locations_by_player(player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_settlements.append(settleable_location)
                     new_moves.append(new_move)
@@ -263,12 +260,12 @@ class CatanState(AbstractState):
         return moves + self._get_all_possible_settlements_moves(new_moves)
 
     def _get_all_possible_cities_moves(self, moves: List[CatanMove]):
-        curr_player = self._players[self._current_player_index]
+        player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if curr_player.can_settle_city():
-                for cityable_location in self._board.get_settlements_by_player(curr_player):
+            if player.can_settle_city():
+                for cityable_location in self._board.get_settlements_by_player(player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities.append(cityable_location)
                     new_moves.append(new_move)
@@ -278,11 +275,11 @@ class CatanState(AbstractState):
         return moves + self._get_all_possible_cities_moves(new_moves)
 
     def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]):
-        curr_player = self.get_current_player()
+        player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if (curr_player.has_resources_for_development_card() and
+            if (player.has_resources_for_development_card() and
                     len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
@@ -290,7 +287,6 @@ class CatanState(AbstractState):
             self.revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        moves.extend(new_moves)
         return moves + self._get_all_possible_development_cards_purchase_moves(new_moves)
 
     def pretend_to_make_a_move(self, move: CatanMove):
@@ -310,7 +306,7 @@ class CatanState(AbstractState):
             player.remove_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
 
-            # TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
+            # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.remove_resources_for_development_card()
 
     def revert_pretend_to_make_a_move(self, move: CatanMove):
@@ -329,5 +325,5 @@ class CatanState(AbstractState):
             self._board.set_location(player, loc2, Colony.Uncolonised)
             player.add_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
-            # TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
+            # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.add_resources_for_development_card()

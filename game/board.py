@@ -102,6 +102,10 @@ A hexagon in the catan map, that has (in this order):
 
 
 class Board:
+    player = 'p'
+    lands = 'l'
+    harbor = 'h'
+
     def __init__(self):
         self._create_and_shuffle_lands()
         self._create_graph()
@@ -157,7 +161,7 @@ class Board:
         :return: list of locations on map that the player can settle a city on
         """
         return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies.node[v]['player'] == (player, Colony.Settlement)]
+                if self._roads_and_colonies.node[v][Board.player] == (player, Colony.Settlement)]
 
     def get_settled_locations_by_player(self, player) -> List[Location]:
         """
@@ -168,7 +172,7 @@ class Board:
         :return: list of locations that have colonies of the given player
         """
         return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies.node[v]['player'][0] == player]
+                if self._roads_and_colonies.node[v][Board.player][0] == player]
 
     def get_unpaved_paths_near_player(self, player) -> List[Path]:
         """
@@ -181,10 +185,10 @@ class Board:
                  if self.has_road_been_paved_by(player, e))
         locations_non_colonised_by_other_players = (
             v for v in set(chain(*roads))
-            if self._roads_and_colonies.node[v]['player'][0] in [player, None])
+            if self._roads_and_colonies.node[v][Board.player][0] in [player, None])
         return [(u, v) for u in locations_non_colonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
-                if self._roads_and_colonies[u][v]['player'][0] is None]
+                if self._roads_and_colonies[u][v][Board.player][0] is None]
 
     def get_surrounding_resources(self, location: Location) -> List[Land]:
         """
@@ -196,7 +200,7 @@ class Board:
                     and the id is the number of the resource in the _lands array
         """
 
-        return self._roads_and_colonies.node[location]['lands']
+        return self._roads_and_colonies.node[location][Board.lands]
 
     def get_colonies_score(self, player) -> int:
         """
@@ -228,7 +232,25 @@ class Board:
         sub_graph_of_player = networkx.Graph(roads_paved_by_player)
         max_road_length = 0
         # TODO think if perhaps only some of the nodes can be checked
-        # (perhaps those with degree 1 + those that are in a cycle, or something like that)
+        # ------
+        # IDEA 1
+        # ------
+        # perhaps check only those with degree 1 + those that are in a cycle
+        # ------
+        # IDEA 2
+        # ------
+        # something like:
+        # longest_in_graph = 0
+        # connect_components = sorted(graph.connect_components, by_number_of_edges_in_component)
+        # for each component in connected_component:
+        #     if len(component.get_edges()) <= longest_in_graph:
+        #         break
+        #     longest = 0
+        #     for each edge in component:
+        #         if longest == len(component.get_edges()):
+        #             break  # that's the best in this component
+        #         longest = max(longest, compute_longest(edge))
+        #     longest_in_graph = max(longest, longest_in_graph)
         for w in sub_graph_of_player.nodes():
             max_road_length = max(
                 max_road_length,
@@ -251,8 +273,8 @@ class Board:
             resource = land[0]
             for location in land[3]:
                 if self.is_colonised(location):
-                    player = self._roads_and_colonies.node[location]['player'][0]
-                    colony = self._roads_and_colonies.node[location]['player'][1]
+                    player = self._roads_and_colonies.node[location][Board.player][0]
+                    colony = self._roads_and_colonies.node[location][Board.player][1]
                     players_to_resources[player][resource] += colony.value
         return players_to_resources
 
@@ -276,11 +298,11 @@ class Board:
 
         if player not in self._player_colonies_points:
             self._player_colonies_points[player] = 0
-        previous_colony = self._roads_and_colonies.node[location]['player'][1]
+        previous_colony = self._roads_and_colonies.node[location][Board.player][1]
         self._player_colonies_points[player] -= previous_colony.value
         self._player_colonies_points[player] += colony.value
 
-        self._roads_and_colonies.node[location]['player'] = (player, colony)
+        self._roads_and_colonies.node[location][Board.player] = (player, colony)
 
     def set_path(self, player, path: Path, road: Road):
         """
@@ -297,7 +319,7 @@ class Board:
                   .format(Board.set_path.__name__, player, road))
             player = None
             road = Road.Unpaved
-        self._roads_and_colonies[path[0]][path[1]]['player'] = (player, road)
+        self._roads_and_colonies[path[0]][path[1]][Board.player] = (player, road)
 
     def get_robber_land(self) -> Land:
         """
@@ -320,7 +342,7 @@ class Board:
         :param location: the location to check
         :return: True if specified location is colonised, false otherwise
         """
-        return self._roads_and_colonies.node[location]['player'][0] is not None
+        return self._roads_and_colonies.node[location][Board.player][0] is not None
 
     def has_road_been_paved_by(self, player, path: Path):
         """
@@ -329,7 +351,7 @@ class Board:
         :param path: the path to check if the player paved a road at
         :return: True if road on that path has been paved by given player, False otherwise
         """
-        return self._roads_and_colonies[path[0]][path[1]]['player'][0] == player
+        return self._roads_and_colonies[path[0]][path[1]][Board.player][0] == player
 
     _vertices_rows = [
         [i for i in range(0, 3)],
@@ -404,10 +426,10 @@ class Board:
         for offset, harbor in zip(offsets, harbors):
             i += offset
             u, v = wrapping_edges[i]
-            self._roads_and_colonies[u][v]['harbor'] = harbor
+            self._roads_and_colonies[u][v][Board.harbor] = harbor
 
     def _is_wrapping_edge(self, u, v):
-        return len(self._roads_and_colonies[u][v]['lands']) == 1
+        return len(self._roads_and_colonies[u][v][Board.lands]) == 1
 
     @staticmethod
     def _create_edges():
@@ -466,17 +488,17 @@ class Board:
         return vertices_map
 
     def _set_vertices_attributes(self, vertices_to_lands):
-        networkx.set_node_attributes(self._roads_and_colonies, 'lands', vertices_to_lands)
+        networkx.set_node_attributes(self._roads_and_colonies, Board.lands, vertices_to_lands)
         vertices_to_players = {v: (None, Colony.Uncolonised) for v in Board._vertices}
-        networkx.set_node_attributes(self._roads_and_colonies, 'player', vertices_to_players)
+        networkx.set_node_attributes(self._roads_and_colonies, Board.player, vertices_to_players)
 
     def _set_edges_attributes(self, vertices_to_lands):
         for edge in self._roads_and_colonies.edges_iter():
             lands_intersection = [land for land in vertices_to_lands[edge[0]]
                                   if land in vertices_to_lands[edge[1]]]
             edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]
-            edge_attributes['lands'] = lands_intersection
-            edge_attributes['player'] = (None, Road.Unpaved)
+            edge_attributes[Board.lands] = lands_intersection
+            edge_attributes[Board.player] = (None, Road.Unpaved)
 
     @staticmethod
     def _set_lands_attributes(vertices_to_lands):
