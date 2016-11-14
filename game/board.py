@@ -177,11 +177,11 @@ class Board:
         :return: list of paths the player can pave a road in
         """
 
-        roads = [e for e in self._roads_and_colonies.edges_iter()
-                 if self.has_road_been_paved_by(player, e)]
-        locations_non_colonised_by_other_players = [
+        roads = (e for e in self._roads_and_colonies.edges_iter()
+                 if self.has_road_been_paved_by(player, e))
+        locations_non_colonised_by_other_players = (
             v for v in set(chain(*roads))
-            if self._roads_and_colonies.node[v]['player'][0] in [player, None]]
+            if self._roads_and_colonies.node[v]['player'][0] in [player, None])
         return [(u, v) for u in locations_non_colonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
                 if self._roads_and_colonies[u][v]['player'][0] is None]
