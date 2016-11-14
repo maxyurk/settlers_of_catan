@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from algorithms.abstract_state import AbstractState
 from game.abstract_player import AbstractPlayer
-from game.catan_state import CatanState
+from game.catan_state import CatanState, CatanMove
 from game.pieces import Colony, Road
 
 
@@ -66,13 +66,31 @@ class TestCatanState(TestCase):
         self.assertSetEqual(expected_possible_roads, actual_possible_roads)
 
     def test_make_move(self):
-        self.fail()
+        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [])
+
+        self.players[0].add_resources_for_settlement()
+        move = CatanMove()
+        move.locations_to_be_set_to_settlements.append(0)
+        self.state.make_move(move)
+
+        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [0])
 
     def test_unmake_move(self):
-        self.fail()
+        self.players[0].add_resources_for_settlement()
+        move = CatanMove()
+        move.locations_to_be_set_to_settlements.append(0)
+        self.state.make_move(move)
+
+        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [0])
+
+        self.state.unmake_move(move)
 
     def test_get_current_player(self):
-        self.fail()
+        self.assertEqual(self.state.get_current_player(), self.players[0])
+        self.state.make_move(CatanMove())
+        self.assertEqual(self.state.get_current_player(), self.players[1])
+        self.state.make_move(CatanMove())
+        self.assertEqual(self.state.get_current_player(), self.players[0])
 
     def test_throw_dice(self):
         self.state._board.set_location(self.players[0], 0, Colony.Settlement)
