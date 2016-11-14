@@ -20,16 +20,16 @@ class CatanMove(AbstractMove):
 
 class CatanState(AbstractState):
     def __init__(self, players: List[AbstractPlayer]):
-        self.players = players
-        self.current_player_index = 0
-        self.board = Board()
+        self._players = players
+        self._current_player_index = 0
+        self._board = Board()
 
-        self.dev_cards = [DevelopmentCard.Knight] * 15 +\
-                         [DevelopmentCard.VictoryPoint] * 5 +\
-                         [DevelopmentCard.RoadBuilding,
-                          DevelopmentCard.Monopoly,
-                          DevelopmentCard.YearOfPlenty] * 2
-        random.shuffle(self.dev_cards)
+        self._dev_cards = [DevelopmentCard.Knight] * 15 +\
+                          [DevelopmentCard.VictoryPoint] * 5 +\
+                          [DevelopmentCard.RoadBuilding,
+                           DevelopmentCard.Monopoly,
+                           DevelopmentCard.YearOfPlenty] * 2
+        random.shuffle(self._dev_cards)
 
         # we must preserve these in the state, since it's possible a
         # player has one of the special cards, while some-one has the
@@ -37,8 +37,8 @@ class CatanState(AbstractState):
         # i.e when player 1 paved 5 roads, and player too as-well,
         # but only after player 1.
         # TODO consider making both of these properties stacks, for make_move/unamake_move
-        self.player_with_largest_army = None
-        self.player_with_longest_road = None
+        self._player_with_largest_army = [None]
+        self._player_with_longest_road = [None]
 
     def is_final(self):
         """
@@ -46,13 +46,13 @@ class CatanState(AbstractState):
         Returns:
             bool: indicating whether the current state is a final one
         """
-        players_points_count = {player: self.board.get_colonies_score(player)
-                                for player in self.players}
-        if self.player_with_largest_army is not None:
-            players_points_count[self.player_with_largest_army] += 2
-        if self.player_with_longest_road is not None:
-            players_points_count[self.player_with_longest_road] += 2
-        for player in self.players:
+        players_points_count = {player: self._board.get_colonies_score(player)
+                                for player in self._players}
+        if self._get_player_with_largest_army() is not None:
+            players_points_count[self._get_player_with_largest_army()] += 2
+        if self._get_player_with_longest_road() is not None:
+            players_points_count[self._get_player_with_longest_road()] += 2
+        for player in self._players:
             players_points_count[player] += player.get_victory_point_development_cards_count()
 
         highest_score = max(players_points_count.values())
@@ -75,18 +75,18 @@ class CatanState(AbstractState):
 
     def make_move(self, move: AbstractMove):
         """makes specified move"""
-        # TODO remember to go to next player. current_player_index = current_player_index+1%len of list
         # TODO when road is paved, check if longest road has changed
         # TODO when knight card is used, check if largest army has changed
-        pass
+
+        self._current_player_index = (self._current_player_index + 1) % len(self._players)
 
     def unmake_move(self, move: AbstractMove):
         """reverts specified move"""
-        pass
+        self._current_player_index = (self._current_player_index - 1) % len(self._players)
 
     def get_current_player(self):
         """returns the player that should play next"""
-        return self.players[self.current_player_index]
+        return self._players[self._current_player_index]
 
     numbers_to_probabilities = {}
     for i, p in zip(range(2, 7), range(1, 6)):
@@ -130,14 +130,20 @@ class CatanState(AbstractState):
             return
 
         players_to_resources = \
-            self.board.get_players_to_resources_by_number(rolled_dice_number)
+            self._board.get_players_to_resources_by_number(rolled_dice_number)
 
         for player, resources_to_amount in players_to_resources.items():
             for resource, resource_amount in resources_to_amount.items():
                 add_or_remove_resource(player, resource, resource_amount)
 
+    def _get_player_with_longest_road(self):
+        return self._player_with_longest_road[-1]
+
+    def _get_player_with_largest_army(self):
+        return self._player_with_largest_army[-1]
+
     def _get_all_possible_development_cards_exposure_moves(self, moves: List[CatanMove]):
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
@@ -153,12 +159,12 @@ class CatanState(AbstractState):
         return self._get_all_possible_development_cards_exposure_moves(moves)
 
     def _get_all_possible_paths_moves(self, moves: List[CatanMove]):
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
             if curr_player.can_pave_road():
-                for path_nearby in self.board.get_unpaved_paths_near_player(curr_player):
+                for path_nearby in self._board.get_unpaved_paths_near_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
                     new_moves.append(new_move)
@@ -169,12 +175,12 @@ class CatanState(AbstractState):
         return self._get_all_possible_paths_moves(moves)
 
     def _get_all_possible_settlements_moves(self, moves: List[CatanMove]):
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
             if curr_player.can_settle_settlement():
-                for settleable_location in self.board.get_settleable_locations_by_player(curr_player):
+                for settleable_location in self._board.get_settleable_locations_by_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_settlements.append(settleable_location)
                     new_moves.append(new_move)
@@ -185,12 +191,12 @@ class CatanState(AbstractState):
         return self._get_all_possible_settlements_moves(moves)
 
     def _get_all_possible_cities_moves(self, moves: List[CatanMove]):
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
             if curr_player.can_settle_city():
-                for cityable_location in self.board.get_settlements_by_player(curr_player):
+                for cityable_location in self._board.get_settlements_by_player(curr_player):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities.append(cityable_location)
                     new_moves.append(new_move)
@@ -201,12 +207,12 @@ class CatanState(AbstractState):
         return self._get_all_possible_cities_moves(moves)
 
     def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]):
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
             if (curr_player.has_resources_for_development_card() and
-                    len(self.dev_cards) > move.development_cards_to_be_purchased_count):
+                    len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
@@ -218,18 +224,18 @@ class CatanState(AbstractState):
 
     def _pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         for card in move.development_cards_to_be_exposed:
             # TODO apply side effect from card
             curr_player.expose_development_card(card)
         for path in move.paths_to_be_paved:
-            self.board.set_path(curr_player, path, Road.Paved)
+            self._board.set_path(curr_player, path, Road.Paved)
             curr_player.remove_resources_for_road()
         for loc1 in move.locations_to_be_set_to_settlements:
-            self.board.set_location(curr_player, loc1, Colony.Settlement)
+            self._board.set_location(curr_player, loc1, Colony.Settlement)
             curr_player.remove_resources_for_settlement()
         for loc2 in move.locations_to_be_set_to_cities:
-            self.board.set_location(curr_player, loc2, Colony.City)
+            self._board.set_location(curr_player, loc2, Colony.City)
             curr_player.remove_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
 
@@ -238,18 +244,18 @@ class CatanState(AbstractState):
 
     def _revert_pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
-        curr_player = self.players[self.current_player_index]
+        curr_player = self._players[self._current_player_index]
         for card in move.development_cards_to_be_exposed:
             # TODO revert side effect from card
             curr_player.un_expose_development_card(card)
         for path in move.paths_to_be_paved:
-            self.board.set_path(curr_player, path, Road.Unpaved)
+            self._board.set_path(curr_player, path, Road.Unpaved)
             curr_player.add_resources_for_road()
         for loc1 in move.locations_to_be_set_to_settlements:
-            self.board.set_location(curr_player, loc1, Colony.Uncolonised)
+            self._board.set_location(curr_player, loc1, Colony.Uncolonised)
             curr_player.add_resources_for_settlement()
         for loc2 in move.locations_to_be_set_to_cities:
-            self.board.set_location(curr_player, loc2, Colony.Uncolonised)
+            self._board.set_location(curr_player, loc2, Colony.Uncolonised)
             curr_player.add_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
             # TODO add purchase card mechanism here. should apply : curr_player.add_unexposed_development_card(zzzzzz)
