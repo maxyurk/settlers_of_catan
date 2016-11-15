@@ -88,9 +88,6 @@ def main():
                  .format(current_scores[p1], current_scores[p2], c))
         else:
             logger.info('.')
-    logger.info('{}:{} | turn: {} | game end'.format(current_scores[p1], current_scores[p2], c))
-    state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
-
 
 if __name__ == '__main__':
     main()

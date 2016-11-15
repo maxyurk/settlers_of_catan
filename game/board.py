@@ -171,8 +171,7 @@ class Board:
         :param player: the player to get the colonies of
         :return: list of locations that have colonies of the given player
         """
-        return [v for v in self._roads_and_colonies.nodes()
-                if self._roads_and_colonies.node[v][Board.player][0] == player]
+        return [v for v in self._roads_and_colonies.nodes() if self.is_colonised_by(player, v)]
 
     def get_unpaved_paths_near_player(self, player) -> List[Path]:
         """
@@ -180,15 +179,13 @@ class Board:
         :param player: the player to get paths on map that he can pave
         :return: list of paths the player can pave a road in
         """
-
-        roads = (e for e in self._roads_and_colonies.edges_iter()
-                 if self.has_road_been_paved_by(player, e))
-        locations_non_colonised_by_other_players = (
-            v for v in set(chain(*roads))
-            if self._roads_and_colonies.node[v][Board.player][0] in [player, None])
-        return [(u, v) for u in locations_non_colonised_by_other_players
+        roads = [e for e in self._roads_and_colonies.edges_iter()
+                 if self.has_road_been_paved_by(player, e)]
+        uncolonised_by_other_players = [v for v in set(chain(*roads))
+                                        if self.is_colonised_by(player, v) or not self.is_colonised(v)]
+        return [(u, v) for u in uncolonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
-                if self._roads_and_colonies[u][v][Board.player][0] is None]
+                if self.has_road_been_paved_by(None, (u, v))]
 
     def get_surrounding_resources(self, location: Location) -> List[Land]:
         """
@@ -274,7 +271,7 @@ class Board:
             for location in land[3]:
                 if self.is_colonised(location):
                     player = self._roads_and_colonies.node[location][Board.player][0]
-                    colony = self._roads_and_colonies.node[location][Board.player][1]
+                    colony = self.get_colony_type_at_location(location)
                     players_to_resources[player][resource] += colony.value
         return players_to_resources
 
@@ -296,7 +293,7 @@ class Board:
 
         if player not in self._player_colonies_points:
             self._player_colonies_points[player] = 0
-        previous_colony = self._roads_and_colonies.node[location][Board.player][1]
+        previous_colony = self.get_colony_type_at_location(location)
         self._player_colonies_points[player] -= previous_colony.value
         self._player_colonies_points[player] += colony.value
 
@@ -307,7 +304,7 @@ class Board:
         if __debug__:
             sum_of_settlements_and_cities_points = 0
             for v in self._roads_and_colonies.nodes_iter():
-                sum_of_settlements_and_cities_points += self._roads_and_colonies.node[v][Board.player][1].value
+                sum_of_settlements_and_cities_points += self.get_colony_type_at_location(v).value
 
             sum_of_points = 0
             for points in self._player_colonies_points.values():
@@ -368,7 +365,7 @@ class Board:
         :param path: the path to check if the player paved a road at
         :return: True if road on that path has been paved by given player, False otherwise
         """
-        return self._roads_and_colonies[path[0]][path[1]][Board.player][0] == player
+        return self._roads_and_colonies[path[0]][path[1]][Board.player][0] is player
 
     def plot_map(self, file_name='tmp.jpg'):
         vertices_by_players = self.get_locations_by_players()
@@ -404,7 +401,7 @@ class Board:
                 g.get_node(vertex).attr['style'] = 'filled'
                 g.get_node(vertex).attr['fontsize'] = 25
                 g.get_node(vertex).attr['fontname'] = 'times-bold'
-                if self._roads_and_colonies.node[vertex][Board.player][1] == Colony.City:
+                if self.get_colony_type_at_location(vertex) == Colony.City:
                     g.get_node(vertex).attr['shape'] = 'box'
                 else:
                     g.get_node(vertex).attr['shape'] = 'circle'
@@ -422,13 +419,11 @@ class Board:
         :return: Dict[Player, List[Location]]
         """
         edges_by_players = {
-            player:
-                [e for e in self._roads_and_colonies.edges_iter()
-                 if self._roads_and_colonies[e[0]][e[1]][Board.player][0] == player]
+            player: [e for e in self._roads_and_colonies.edges_iter() if self.has_road_been_paved_by(player, e)]
             for player in self._player_colonies_points.keys()
             }
         edges_by_players[None] = [e for e in self._roads_and_colonies.edges_iter()
-                                  if self._roads_and_colonies[e[0]][e[1]][Board.player][0] is None]
+                                  if self.has_road_been_paved_by(None, e)]
         return edges_by_players
 
     def get_locations_by_players(self):
@@ -438,13 +433,10 @@ class Board:
         :return: Dict[Player, List[Location]]
         """
         vertices_by_players = {
-            player:
-                [v for v in self._roads_and_colonies.nodes_iter()
-                 if self._roads_and_colonies.node[v][Board.player][0] == player]
+            player: [v for v in self._roads_and_colonies.nodes_iter() if self.is_colonised_by(player, v)]
             for player in self._player_colonies_points.keys()
             }
-        vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes_iter()
-                                     if self._roads_and_colonies.node[v][Board.player][0] is None]
+        vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes_iter() if not self.is_colonised(v)]
         return vertices_by_players
 
     def is_player_on_harbor(self, player, harbor: Harbor):
