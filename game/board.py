@@ -1,11 +1,10 @@
 import enum
 import random
 from itertools import chain
-from logging import error
 from typing import List, Tuple, Set, Dict
-
 import matplotlib.pyplot
 import networkx
+from collections import namedtuple
 
 from game.pieces import Colony, Road
 
@@ -345,13 +344,22 @@ class Board:
         """
         self._robber_land = land
 
-    def is_colonised(self, location: Location):
+    def is_colonised(self, location: Location) -> bool:
         """
         indicate whether the specified location is colonised
         :param location: the location to check
         :return: True if specified location is colonised, false otherwise
         """
-        return self._roads_and_colonies.node[location][Board.player][0] is not None
+        return not self.is_colonised_by(None, location)
+
+    def is_colonised_by(self, player, location: Location) -> bool:
+        """
+        indicate whether the specified location is colonised by specified player
+        :param location: the location to check
+        :param player: the player to check
+        :return: True if specified location is colonised by player, false otherwise
+        """
+        return self._roads_and_colonies.node[location][Board.player][0] is player
 
     def has_road_been_paved_by(self, player, path: Path):
         """
@@ -439,6 +447,18 @@ class Board:
                                      if self._roads_and_colonies.node[v][Board.player][0] is None]
         return vertices_by_players
 
+    def is_player_on_harbor(self, player, harbor: Harbor):
+        """
+        indicate whether specified player is settled on a location with specified harbor_type
+        :param player: the player to check if he's settled on a location with given harbor-type
+        :param harbor: harbor-type to check if given player is settled nearby
+        :return: True if player settled near the harbor-type, false otherwise
+        """
+        for location in self._locations_by_harbors[harbor]:
+            if self.is_colonised_by(player, location):
+                return True
+        return False
+
     _vertices_rows = [
         [i for i in range(0, 3)],
         [i for i in range(3, 7)],
@@ -495,24 +515,32 @@ class Board:
         self._roads_and_colonies.add_edges_from(Board._create_edges())
 
     def _create_harbors(self):
+        harbors = [Harbor.HarborBrick, Harbor.HarborLumber, Harbor.HarborWool, Harbor.HarborGrain, Harbor.HarborOre]
+        random.shuffle(harbors)
+        edges = self._get_harbors_edges()
+        self._locations_by_harbors = {harbor: list(edge) for harbor, edge in zip(harbors, edges[0:len(harbors)])}
+        self._locations_by_harbors[Harbor.HarborGeneric] = list(chain(*edges[len(harbors):len(edges)]))
+
+    def _get_harbors_edges(self):
+        wrapping_edges = self._get_wrapping_edges()
+        offsets = [4] * 3 + [3] * 6
+        random.shuffle(offsets)
+        indices = [offsets[0] - 2]
+        for i in range(1, len(offsets)):
+            indices.append(offsets[i] + indices[i - 1])
+        edges = [wrapping_edges[i] for i in indices]
+        return edges
+
+    def _get_wrapping_edges(self):
         u, v = (3, 0)
         wrapping_edges = [(u, v)]
         while (u, v) != (7, 3):
-            w = next(w for w in self._roads_and_colonies.neighbors(v)
-                     if w != u and self._is_wrapping_edge(v, w))
+            assert len([w for w in self._roads_and_colonies.neighbors(v)
+                        if w != u and self._is_wrapping_edge(v, w)]) == 1
+            w = next(w for w in self._roads_and_colonies.neighbors(v) if w != u and self._is_wrapping_edge(v, w))
             wrapping_edges.append((v, w))
             u, v = v, w
-
-        harbors = [harbor for harbor in Harbor] + 3 * [Harbor.HarborGeneric]
-        random.shuffle(harbors)
-
-        offsets = [4] * 3 + [3] * 6
-        random.shuffle(offsets)
-        i = -3
-        for offset, harbor in zip(offsets, harbors):
-            i += offset
-            u, v = wrapping_edges[i]
-            self._roads_and_colonies[u][v][Board.harbor] = harbor
+        return wrapping_edges
 
     def _is_wrapping_edge(self, u, v):
         return len(self._roads_and_colonies[u][v][Board.lands]) == 1
