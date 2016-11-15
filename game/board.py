@@ -4,6 +4,7 @@ from itertools import chain
 from logging import error
 from typing import List, Tuple, Set, Dict
 
+import matplotlib.pyplot
 import networkx
 
 from game.pieces import Colony, Road
@@ -352,6 +353,57 @@ class Board:
         :return: True if road on that path has been paved by given player, False otherwise
         """
         return self._roads_and_colonies[path[0]][path[1]][Board.player][0] == player
+
+    def plot_map(self):
+        vertices_by_players = self.get_locations_by_players()
+        edges_by_players = self.get_paths_by_players()
+
+        colors = ['m', 'g', 'b', 'r']
+
+        for player in vertices_by_players.keys():
+            color = 'grey'
+            if player is not None:
+                color = colors.pop()
+            networkx.draw_spectral(self._roads_and_colonies,
+                                   with_labels=True,
+                                   nodelist=vertices_by_players[player],
+                                   node_color=color,
+                                   edgelist=edges_by_players[player],
+                                   edge_color=color)
+            print('{} is {}'.format(player, color))
+        matplotlib.pyplot.show()
+
+    def get_paths_by_players(self):
+        """
+        get players to paths dictionary
+        my_board.get_paths_by_players()[None] == all the unpaved paths
+        :return: Dict[Player, List[Location]]
+        """
+        edges_by_players = {
+            player:
+                [e for e in self._roads_and_colonies.edges_iter()
+                 if self._roads_and_colonies[e[0]][e[1]][Board.player][0] == player]
+            for player in self._player_colonies_points.keys()
+            }
+        edges_by_players[None] = [e for e in self._roads_and_colonies.edges_iter()
+                                  if self._roads_and_colonies[e[0]][e[1]][Board.player][0] is None]
+        return edges_by_players
+
+    def get_locations_by_players(self):
+        """
+        get players to locations dictionary
+        my_board.get_locations_by_players()[None] == all the non-colonised locations
+        :return: Dict[Player, List[Location]]
+        """
+        vertices_by_players = {
+            player:
+                [v for v in self._roads_and_colonies.nodes_iter()
+                 if self._roads_and_colonies.node[v][Board.player][0] == player]
+            for player in self._player_colonies_points.keys()
+            }
+        vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes_iter()
+                                     if self._roads_and_colonies.node[v][Board.player][0] is None]
+        return vertices_by_players
 
     _vertices_rows = [
         [i for i in range(0, 3)],

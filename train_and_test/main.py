@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
     c = 0
     previous_scores = state.get_scores_by_player()
+
     while not state.is_final():
         c += 1
 
@@ -43,6 +44,8 @@ if __name__ == '__main__':
             if previous_scores[player] != scores[player]:
                 previous_scores = scores
                 print('\n{}:{} | turn: {}'.format(scores[p1], scores[p2], c), flush=True)
+                for i in range(5):
+                    state._board.plot_map()
             else:
                 print('.', sep='', end='', flush=True)
     print('\n{}:{} | turn: {}'.format(scores[p1], scores[p2], c), flush=True)
