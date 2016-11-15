@@ -384,8 +384,14 @@ class Board:
                 color = colors.pop()
             for vertex in vertices_by_players[player]:
                 g.get_node(vertex).attr['color'] = color
+                if self._roads_and_colonies.node[vertex][Board.player][1] == Colony.City:
+                    g.get_node(vertex).attr['shape'] = 'box'
+                else:
+                    g.get_node(vertex).attr['shape'] = 'circle'
+                g.get_node(vertex).attr['penwidth'] = 2
             for u, v in edges_by_players[player]:
                 g.get_edge(u, v).attr['color'] = color
+                g.get_edge(u, v).attr['penwidth'] = 2
         g.layout()
         g.draw(file_name)
 
