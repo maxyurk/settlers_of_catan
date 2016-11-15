@@ -63,7 +63,6 @@ class AlphaBetaExpectimax:
         elif self._is_maximizing_player(self.state.get_current_player()):
             v = -math.inf
             best_move = None
-
             for move in self.state.get_next_moves():
                 self.state.make_move(move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)

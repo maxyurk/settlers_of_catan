@@ -26,15 +26,15 @@ class TestCatanState(TestCase):
         self.assertFalse(self.state.is_final())
 
         for i in range(21, 26):
-            self.state._board.set_location(self.players[0], i, Colony.City)
+            self.state.board.set_location(self.players[0], i, Colony.City)
 
         self.assertTrue(self.state.is_final())
 
     def test_get_next_moves_given_resources_for_single_road(self):
         # given this board
-        self.state._board.set_location(self.players[0], 0, Colony.Settlement)
-        self.state._board.set_path(self.players[0], (3, 0), Road.Paved)
-        self.state._board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
 
         # without resources, assert there's only the "no move" move
         moves = self.state.get_next_moves()
@@ -66,14 +66,14 @@ class TestCatanState(TestCase):
         self.assertSetEqual(expected_possible_roads, actual_possible_roads)
 
     def test_make_move(self):
-        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [])
+        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])
 
         self.players[0].add_resources_for_settlement()
         move = CatanMove()
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
-        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [0])
+        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [0])
 
     def test_unmake_move(self):
         self.players[0].add_resources_for_settlement()
@@ -81,7 +81,7 @@ class TestCatanState(TestCase):
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
-        self.assertListEqual(self.state._board.get_settled_locations_by_player(self.players[0]), [0])
+        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [0])
 
         self.state.unmake_move(move)
 
@@ -93,9 +93,9 @@ class TestCatanState(TestCase):
         self.assertEqual(self.state.get_current_player(), self.players[0])
 
     def test_throw_dice(self):
-        self.state._board.set_location(self.players[0], 0, Colony.Settlement)
-        land_resource = self.state._board._lands[0][0]
-        land_number = self.state._board._lands[0][1]
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        land_resource = self.state.board._lands[0][0]
+        land_number = self.state.board._lands[0][1]
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
 
@@ -106,9 +106,9 @@ class TestCatanState(TestCase):
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
     def test_unthrow_dice(self):
-        self.state._board.set_location(self.players[0], 0, Colony.Settlement)
-        land_resource = self.state._board._lands[0][0]
-        land_number = self.state._board._lands[0][1]
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        land_resource = self.state.board._lands[0][0]
+        land_number = self.state.board._lands[0][1]
 
         # this is what happens in throw_dice, except I decided what the number is,
         # instead of "throwing the dice"

@@ -279,6 +279,9 @@ class Board:
                     players_to_resources[player][resource] += colony.value
         return players_to_resources
 
+    def get_colony_type_at_location(self, location: Location) -> Colony:
+        return self._roads_and_colonies.node[location][Board.player][1]
+
     def set_location(self, player, location: Location, colony: Colony):
         """
         settle/unsettle given colony type in given location by given player
@@ -290,12 +293,7 @@ class Board:
         :param colony: the colony type to put (settlement/city)
         :return: None
         """
-        if player is None and colony != Colony.Uncolonised:
-            error('{} bad arguments: ({}, {}) is not a logical combination.'
-                  ' Treated as (None, Colony.Uncolonised)'
-                  .format(Board.set_location.__name__, player, colony))
-            player = None
-            colony = Colony.Uncolonised
+        assert not (player is None and colony != Colony.Uncolonised)
 
         if player not in self._player_colonies_points:
             self._player_colonies_points[player] = 0
@@ -303,7 +301,20 @@ class Board:
         self._player_colonies_points[player] -= previous_colony.value
         self._player_colonies_points[player] += colony.value
 
+        if colony == Colony.Uncolonised:
+            player = None
         self._roads_and_colonies.node[location][Board.player] = (player, colony)
+
+        if __debug__:
+            sum_of_settlements_and_cities_points = 0
+            for v in self._roads_and_colonies.nodes_iter():
+                sum_of_settlements_and_cities_points += self._roads_and_colonies.node[v][Board.player][1].value
+
+            sum_of_points = 0
+            for points in self._player_colonies_points.values():
+                sum_of_points += points
+
+            assert sum_of_points == sum_of_settlements_and_cities_points
 
     def set_path(self, player, path: Path, road: Road):
         """
@@ -314,12 +325,9 @@ class Board:
         :param road: road type. Road.Paved to pave, Road.Unpaved to un-pave
         :return: None
         """
-        if player is None and road != Road.Unpaved:
-            error(' {} bad arguments: ({}, {}) is not a logical combination.'
-                  ' Treated as (None, Road.Unpaved)'
-                  .format(Board.set_path.__name__, player, road))
+        assert not (player is None and road != Road.Unpaved)
+        if road == Road.Unpaved:
             player = None
-            road = Road.Unpaved
         self._roads_and_colonies[path[0]][path[1]][Board.player] = (player, road)
 
     def get_robber_land(self) -> Land:
@@ -354,7 +362,7 @@ class Board:
         """
         return self._roads_and_colonies[path[0]][path[1]][Board.player][0] == player
 
-    def plot_map(self, file_name='tmp.png'):
+    def plot_map(self, file_name='tmp.jpg'):
         vertices_by_players = self.get_locations_by_players()
         edges_by_players = self.get_paths_by_players()
 
@@ -379,11 +387,15 @@ class Board:
 
         colors = ['orange', 'brown', 'blue', 'red']
         for player in vertices_by_players.keys():
-            color = 'black'
+            color = 'grey'
             if player is not None:
                 color = colors.pop()
             for vertex in vertices_by_players[player]:
                 g.get_node(vertex).attr['color'] = color
+                g.get_node(vertex).attr['fillcolor'] = color
+                g.get_node(vertex).attr['style'] = 'filled'
+                g.get_node(vertex).attr['fontsize'] = 25
+                g.get_node(vertex).attr['fontname'] = 'times-bold'
                 if self._roads_and_colonies.node[vertex][Board.player][1] == Colony.City:
                     g.get_node(vertex).attr['shape'] = 'box'
                 else:
