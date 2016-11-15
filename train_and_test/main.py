@@ -2,6 +2,7 @@ from game.catan_state import CatanState
 from game.pieces import Colony, Road
 from players.alpha_beta_player import *
 from players.random_player import *
+import os
 
 if __name__ == '__main__':
     p1 = AlphaBetaPlayer(1)
@@ -30,6 +31,10 @@ if __name__ == '__main__':
     state._board.set_path(p2, (22, 28), Road.Paved)
     state._board.set_path(p2, (36, 31), Road.Paved)
 
+    for file_name in os.listdir(None):
+        if file_name.split(sep='_')[0] == 'turn':
+            os.remove(file_name)
+
     c = 0
     previous_scores = state.get_scores_by_player()
 
@@ -44,8 +49,7 @@ if __name__ == '__main__':
             if previous_scores[player] != scores[player]:
                 previous_scores = scores
                 print('\n{}:{} | turn: {}'.format(scores[p1], scores[p2], c), flush=True)
-                for i in range(5):
-                    state._board.plot_map()
+                state._board.plot_map('turn_{}_{}_to_{}.png'.format(c, scores[p1], scores[p2]))
             else:
                 print('.', sep='', end='', flush=True)
     print('\n{}:{} | turn: {}'.format(scores[p1], scores[p2], c), flush=True)
