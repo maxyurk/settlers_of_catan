@@ -1,11 +1,11 @@
 import enum
 import random
+import matplotlib.pyplot
+import networkx
 from itertools import chain
 from operator import itemgetter
 from typing import List, Tuple, Set, Dict
-import matplotlib.pyplot
-import networkx
-from collections import namedtuple
+from algorithms.tree_diameter import tree_diameter
 
 from game.pieces import Colony, Road
 from train_and_test.logger import logger
@@ -103,6 +103,10 @@ A hexagon in the catan map, that has (in this order):
 """
 
 
+def path_key(edge):
+    return min(edge) * 100 + max(edge)
+
+
 class Board:
     player = 'p'
     lands = 'l'
@@ -119,11 +123,13 @@ class Board:
             seed = None
 
         self._seed = seed
+        self._player_colonies_points = {}
+        self._players_by_roads = {}
+
         self._create_and_shuffle_lands()
         self._create_graph()
         self._set_attributes()
         self._create_harbors()
-        self._player_colonies_points = {}
 
     def get_all_settleable_locations(self) -> List[Location]:
         """
@@ -285,7 +291,10 @@ class Board:
         # IDEA 5
         # ------
         # for each component, check if DAG. if DAG, finds longest road
-
+        # ------
+        # IDEA 6
+        # ------
+        # use graph-tool library, that claims to have better performance
         connected_components_and_edge_count_sorted_by_edge_count = sorted(
             ((g, g.size()) for g in networkx.connected_component_subgraphs(sub_graph_of_player, copy=False)),
             key=itemgetter(1), reverse=True)
@@ -293,8 +302,11 @@ class Board:
         for g, edges_count in connected_components_and_edge_count_sorted_by_edge_count:
             if edges_count <= max_road_length:
                 return max_road_length
-            for w in g.nodes():
-                max_road_length = max(max_road_length, Board._compute_longest_road_length(g, w, set()))
+            if networkx.is_tree(g):
+                max_road_length = max(max_road_length, tree_diameter(g) - 1)
+            else:
+                for w in g.nodes():
+                    max_road_length = max(max_road_length, Board._compute_longest_road_length(g, w, set()))
         return max_road_length
 
     def get_players_to_resources_by_number(self, number: RolledDiceNumber) -> Dict:
@@ -368,6 +380,7 @@ class Board:
         if road == Road.Unpaved:
             player = None
         self._roads_and_colonies[path[0]][path[1]][Board.player] = (player, road)
+        self._players_by_roads[path_key(path)] = player
 
     def get_robber_land(self) -> Land:
         """
@@ -408,7 +421,7 @@ class Board:
         :param path: the path to check if the player paved a road at
         :return: True if road on that path has been paved by given player, False otherwise
         """
-        return self._roads_and_colonies[path[0]][path[1]][Board.player][0] is player
+        return self._players_by_roads[path_key(path)] is player
 
     def plot_map(self, file_name='tmp.jpg'):
         vertices_by_players = self.get_locations_by_players()
@@ -647,6 +660,7 @@ class Board:
             edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]
             edge_attributes[Board.lands] = lands_intersection
             edge_attributes[Board.player] = (None, Road.Unpaved)
+            self._players_by_roads[path_key(edge)] = None
 
     @staticmethod
     def _set_lands_attributes(vertices_to_lands):

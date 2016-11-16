@@ -141,10 +141,10 @@ class CatanState(AbstractState):
         move.apply(self)
 
         player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
-        # current_player_max_road_length = self.board.get_player_largest_component_size(self.get_current_player())
-        # current_player_max_road_length += len(move.paths_to_be_paved)
-        # if current_player_max_road_length > length_threshold:
-        if len(move.paths_to_be_paved) != 0:
+        current_player_max_road_length = self.board.get_player_largest_component_size(self.get_current_player())
+        current_player_max_road_length += len(move.paths_to_be_paved)
+        if current_player_max_road_length > length_threshold:
+        # if len(move.paths_to_be_paved) != 0:
             longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
 
             if longest_road_length > length_threshold:
