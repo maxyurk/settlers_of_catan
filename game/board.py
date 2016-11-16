@@ -222,6 +222,15 @@ class Board:
             return self._player_colonies_points[player]
         return 0
 
+    def get_player_largest_component_size(self, player, g=None):
+        if g is None:
+            roads_paved_by_player = [e for e in self._roads_and_colonies.edges()
+                                     if self.has_road_been_paved_by(player, e)]
+            g = networkx.Graph(roads_paved_by_player)
+        if g.size() == 0:
+            return 0
+        return max(networkx.connected_component_subgraphs(g, copy=False), key=len).size()
+
     def get_longest_road_length_of_player(self, player) -> int:
         """
         get the longest road length of specified player.
@@ -231,9 +240,8 @@ class Board:
         :param player: the player fir whom the longest road is calculated
         :return: max(4, the length of the longest road of specified player)
         """
-        roads_paved_by_player = [
-            e for e in self._roads_and_colonies.edges()
-            if self.has_road_been_paved_by(player, e)]
+        roads_paved_by_player = [e for e in self._roads_and_colonies.edges()
+                                 if self.has_road_been_paved_by(player, e)]
 
         roads_threshold = 4
         if len(roads_paved_by_player) <= roads_threshold:
@@ -273,6 +281,10 @@ class Board:
         # ------
         # maintain roads paved by player lists to avoid repeated graph traversals
         # (this may be useful in other places in the code where edges are iterated)
+        # ------
+        # IDEA 5
+        # ------
+        # for each component, check if DAG. if DAG, finds longest road
 
         connected_components_and_edge_count_sorted_by_edge_count = sorted(
             ((g, g.size()) for g in networkx.connected_component_subgraphs(sub_graph_of_player, copy=False)),
@@ -658,4 +670,4 @@ class Board:
 
     def _shuffle(self, sequence):
         assert self._seed is None or 0 <= self._seed < 1
-        random.shuffle(sequence, self._seed)
+        random.shuffle(sequence, None if self._seed is None else lambda: self._seed)

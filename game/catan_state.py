@@ -86,7 +86,7 @@ class CatanState(AbstractState):
                           [DevelopmentCard.RoadBuilding,
                            DevelopmentCard.Monopoly,
                            DevelopmentCard.YearOfPlenty] * 2
-        random.shuffle(self._dev_cards, seed)
+        random.shuffle(self._dev_cards, None if seed is None else lambda: seed)
 
         # we must preserve these in the state, since it's possible a
         # player has one of the special cards, while some-one has the
@@ -140,9 +140,12 @@ class CatanState(AbstractState):
         # TODO when knight card is used, check if largest army has changed
         move.apply(self)
 
+        player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
+        # current_player_max_road_length = self.board.get_player_largest_component_size(self.get_current_player())
+        # current_player_max_road_length += len(move.paths_to_be_paved)
+        # if current_player_max_road_length > length_threshold:
         if len(move.paths_to_be_paved) != 0:
             longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
-            _, length_threshold = self._get_longest_road_player_and_length()
 
             if longest_road_length > length_threshold:
                 self._player_with_longest_road.append(((self.get_current_player()), longest_road_length))
