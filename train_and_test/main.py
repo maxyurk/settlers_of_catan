@@ -12,8 +12,9 @@ def scores_changed(state, previous_scores, scores):
     return False
 
 
-def build_game(p1, p2):
-    state = CatanState([p1, p2])
+def build_game(players, seed):
+    p1, p2 = players
+    state = CatanState([p1, p2], seed)
     state.board.set_location(p1, 0, Colony.Settlement)
     state.board.set_location(p1, 1, Colony.Settlement)
     state.board.set_location(p1, 14, Colony.Settlement)
@@ -40,10 +41,11 @@ def clean_previous_images():
 
 
 def main():
+    seed = None
     p1 = AlphaBetaPlayer(1)
     p2 = AlphaBetaPlayer(1)
-    # p2 = RandomPlayer()
-    state = build_game(p1, p2)
+    # p2 = RandomPlayer(seed)
+    state = build_game([p1, p2], seed)
     clean_previous_images()
 
     c = 0
@@ -82,7 +84,7 @@ def main():
             logger.info('\n{}:{} | turn: {} | BUG. score changed, without movement.'
                         .format(current_scores[p1], current_scores[p2], c))
         else:
-            logger.info('.')
+            print('.', sep='', end='', flush=(c % 10 == 0))
 
 if __name__ == '__main__':
     main()

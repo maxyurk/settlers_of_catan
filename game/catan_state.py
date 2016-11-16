@@ -6,7 +6,8 @@ from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
 from game.development_cards import DevelopmentCard
-
+from train_and_test import logger
+import numpy as np
 
 class CatanMove(AbstractMove):
     def __init__(self):
@@ -67,17 +68,25 @@ class CatanMove(AbstractMove):
 
 
 class CatanState(AbstractState):
-    def __init__(self, players: List[AbstractPlayer]):
+    def __init__(self, players: List[AbstractPlayer], seed=None):
+        if seed is not None and not (0 <= seed < 1):
+            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
+                         ' was sent'.format(parameter_name=CatanState.__init__.__code__.co_varnames[2]))
+            seed = None
+
+        numpy_seed = (seed if seed is None else int(seed * 10))
+        self._random_choice = np.random.RandomState(seed=numpy_seed).choice
+
         self._players = players
         self._current_player_index = 0
-        self.board = Board()
+        self.board = Board(seed)
 
         self._dev_cards = [DevelopmentCard.Knight] * 15 +\
                           [DevelopmentCard.VictoryPoint] * 5 +\
                           [DevelopmentCard.RoadBuilding,
                            DevelopmentCard.Monopoly,
                            DevelopmentCard.YearOfPlenty] * 2
-        random.shuffle(self._dev_cards)
+        random.shuffle(self._dev_cards, seed)
 
         # we must preserve these in the state, since it's possible a
         # player has one of the special cards, while some-one has the
@@ -171,7 +180,8 @@ class CatanState(AbstractState):
         :return: the dice throwing result (a number in the range [2,12])
         """
         if rolled_dice_number is None:
-            rolled_dice_number = random.randint(2, 12)
+            rolled_dice_number = self._random_choice(a=list(CatanState.numbers_to_probabilities.keys()),
+                                                     p=list(CatanState.numbers_to_probabilities.values()))
         self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.add_resource)
         # TODO handle moving robber when rolled 7
         return rolled_dice_number
