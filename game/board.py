@@ -1,6 +1,7 @@
 import enum
 import random
 from itertools import chain
+from operator import itemgetter
 from typing import List, Tuple, Set, Dict
 import matplotlib.pyplot
 import networkx
@@ -127,7 +128,7 @@ class Board:
         :param player: the player to get settleable location by
         :return: list of locations on map that the player can settle locations on
         """
-        non_colonised = [v for v in self._roads_and_colonies.nodes_iter()
+        non_colonised = [v for v in self._roads_and_colonies.nodes()
                          if not self.is_colonised(v)]
         coloniseable = []
         for u in non_colonised:
@@ -179,7 +180,7 @@ class Board:
         :param player: the player to get paths on map that he can pave
         :return: list of paths the player can pave a road in
         """
-        roads = [e for e in self._roads_and_colonies.edges_iter()
+        roads = [e for e in self._roads_and_colonies.edges()
                  if self.has_road_been_paved_by(player, e)]
         uncolonised_by_other_players = [v for v in set(chain(*roads))
                                         if self.is_colonised_by(player, v) or not self.is_colonised(v)]
@@ -213,28 +214,29 @@ class Board:
     def get_longest_road_length_of_player(self, player) -> int:
         """
         get the longest road length of specified player.
-        NOTE: if player has less than 5 roads in total, it returns 0
+        NOTE: if player has less than 5 roads in total, it returns 4
         that's because it means he can't have the "longest-road" card anyways,
         so computing the longest road is unnecessary
         :param player: the player fir whom the longest road is calculated
-        :return: the length of the longest road of specified player
+        :return: max(4, the length of the longest road of specified player)
         """
         roads_paved_by_player = [
-            e for e in self._roads_and_colonies.edges_iter()
+            e for e in self._roads_and_colonies.edges()
             if self.has_road_been_paved_by(player, e)]
 
-        if len(roads_paved_by_player) < 5:
-            return 0
-
+        roads_threshold = 4
+        if len(roads_paved_by_player) <= roads_threshold:
+            return roads_threshold
         sub_graph_of_player = networkx.Graph(roads_paved_by_player)
-        max_road_length = 0
+        max_road_length = roads_threshold
+
         # TODO think if perhaps only some of the nodes can be checked
         # ------
         # IDEA 1
         # ------
         # perhaps check only those with degree 1 + those that are in a cycle
         # ------
-        # IDEA 2
+        # IDEA 2 - implemented
         # ------
         # something like:
         # longest_in_graph = 0
@@ -248,10 +250,28 @@ class Board:
         #             break  # that's the best in this component
         #         longest = max(longest, compute_longest(edge))
         #     longest_in_graph = max(longest, longest_in_graph)
-        for w in sub_graph_of_player.nodes():
-            max_road_length = max(
-                max_road_length,
-                Board._compute_longest_road_length(sub_graph_of_player, w, set()))
+        # ------
+        # IDEA 3
+        # ------
+        # maintain subgraphs to avoid the copy overhead
+        # (not possible because the sub-graph in networkx is induced from nodes, not edges
+        # could be implemented by removing edges and then putting them back.
+        # not sure it's better though)
+        # ------
+        # IDEA 4
+        # ------
+        # maintain roads paved by player lists to avoid repeated graph traversals
+        # (this may be useful in other places in the code where edges are iterated)
+
+        connected_components_and_edge_count_sorted_by_edge_count = sorted(
+            ((g, g.size()) for g in networkx.connected_component_subgraphs(sub_graph_of_player, copy=False)),
+            key=itemgetter(1), reverse=True)
+
+        for g, edges_count in connected_components_and_edge_count_sorted_by_edge_count:
+            if edges_count <= max_road_length:
+                return max_road_length
+            for w in g.nodes():
+                max_road_length = max(max_road_length, Board._compute_longest_road_length(g, w, set()))
         return max_road_length
 
     def get_players_to_resources_by_number(self, number: RolledDiceNumber) -> Dict:
@@ -303,7 +323,7 @@ class Board:
 
         if __debug__:
             sum_of_settlements_and_cities_points = 0
-            for v in self._roads_and_colonies.nodes_iter():
+            for v in self._roads_and_colonies.nodes():
                 sum_of_settlements_and_cities_points += self.get_colony_type_at_location(v).value
 
             sum_of_points = 0
@@ -419,10 +439,10 @@ class Board:
         :return: Dict[Player, List[Location]]
         """
         edges_by_players = {
-            player: [e for e in self._roads_and_colonies.edges_iter() if self.has_road_been_paved_by(player, e)]
+            player: [e for e in self._roads_and_colonies.edges() if self.has_road_been_paved_by(player, e)]
             for player in self._player_colonies_points.keys()
             }
-        edges_by_players[None] = [e for e in self._roads_and_colonies.edges_iter()
+        edges_by_players[None] = [e for e in self._roads_and_colonies.edges()
                                   if self.has_road_been_paved_by(None, e)]
         return edges_by_players
 
@@ -433,10 +453,10 @@ class Board:
         :return: Dict[Player, List[Location]]
         """
         vertices_by_players = {
-            player: [v for v in self._roads_and_colonies.nodes_iter() if self.is_colonised_by(player, v)]
+            player: [v for v in self._roads_and_colonies.nodes() if self.is_colonised_by(player, v)]
             for player in self._player_colonies_points.keys()
             }
-        vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes_iter() if not self.is_colonised(v)]
+        vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes() if not self.is_colonised(v)]
         return vertices_by_players
 
     def is_player_on_harbor(self, player, harbor: Harbor):
@@ -599,7 +619,7 @@ class Board:
         networkx.set_node_attributes(self._roads_and_colonies, Board.player, vertices_to_players)
 
     def _set_edges_attributes(self, vertices_to_lands):
-        for edge in self._roads_and_colonies.edges_iter():
+        for edge in self._roads_and_colonies.edges():
             lands_intersection = [land for land in vertices_to_lands[edge[0]]
                                   if land in vertices_to_lands[edge[1]]]
             edge_attributes = self._roads_and_colonies[edge[0]][edge[1]]

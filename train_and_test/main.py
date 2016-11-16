@@ -47,7 +47,8 @@ def clean_previous_images():
 
 def main():
     p1 = AlphaBetaPlayer(1)
-    p2 = RandomPlayer()
+    p2 = AlphaBetaPlayer(1)
+    # p2 = RandomPlayer()
     state = build_game(p1, p2)
     clean_previous_images()
 
@@ -60,17 +61,17 @@ def main():
 
         state.throw_dice()
         # --------------------------------------
-        if scores_changed(state, previous_scores, state.get_scores_by_player()):
+        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~throw dice~')
         # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
-        if scores_changed(state, previous_scores, state.get_scores_by_player()):
+        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~choose move~')
         # --------------------------------------
         state.make_move(move)
         # --------------------------------------
-        if scores_changed(state, previous_scores, state.get_scores_by_player()):
+        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~make move~')
         # --------------------------------------
 
