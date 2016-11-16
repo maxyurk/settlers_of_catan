@@ -1,14 +1,8 @@
 import logging
-from logging import info
-
-from game.catan_state import CatanState
+import os
 from game.pieces import Colony, Road
 from players.alpha_beta_player import *
-from players.random_player import *
-import os
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+from train_and_test.logger import logger
 
 
 def scores_changed(state, previous_scores, scores):
@@ -82,11 +76,11 @@ def main():
 
         if move.is_doing_anything():
             logger.info('\n{}:{} | turn: {} | move:{}'
-                 .format(current_scores[p1], current_scores[p2], c, {k: v for k, v in move.__dict__.items() if v}))
+                        .format(current_scores[p1], current_scores[p2], c, {k: v for k, v in move.__dict__.items() if v}))
             state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
             logger.info('\n{}:{} | turn: {} | BUG. score changed, without movement.'
-                 .format(current_scores[p1], current_scores[p2], c))
+                        .format(current_scores[p1], current_scores[p2], c))
         else:
             logger.info('.')
 

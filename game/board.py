@@ -8,6 +8,7 @@ import networkx
 from collections import namedtuple
 
 from game.pieces import Colony, Road
+from train_and_test.logger import logger
 
 """
 Structure
@@ -107,7 +108,17 @@ class Board:
     lands = 'l'
     harbor = 'h'
 
-    def __init__(self):
+    def __init__(self, seed: int=None):
+        """
+        Board of the game settlers of catan
+        :param seed: optional parameter. send the same number in the range [0,1) to get the same map
+        """
+        if seed is not None and not (0 <= seed < 1):
+            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
+                         ' was sent'.format(parameter_name=Board.__init__.__code__.co_varnames[1]))
+            seed = None
+
+        self._seed = seed
         self._create_and_shuffle_lands()
         self._create_graph()
         self._set_attributes()
@@ -504,9 +515,8 @@ class Board:
         land_numbers = [2, 12] + [i for i in range(3, 12) if i != 7] * 2
         land_resources = [Resource.Lumber, Resource.Wool, Resource.Grain] * 4 + \
                          [Resource.Brick, Resource.Ore] * 3
-
-        random.shuffle(land_numbers)
-        random.shuffle(land_resources)
+        self._shuffle(land_numbers)
+        self._shuffle(land_resources)
 
         land_resources.append(Resource.Desert)
         land_numbers.append(0)
@@ -528,20 +538,20 @@ class Board:
 
     def _create_harbors(self):
         harbors = [Harbor.HarborBrick, Harbor.HarborLumber, Harbor.HarborWool, Harbor.HarborGrain, Harbor.HarborOre]
-        random.shuffle(harbors)
+        self._shuffle(harbors)
         edges = self._get_harbors_edges()
+
         self._locations_by_harbors = {harbor: list(edge) for harbor, edge in zip(harbors, edges[0:len(harbors)])}
         self._locations_by_harbors[Harbor.HarborGeneric] = list(chain(*edges[len(harbors):len(edges)]))
 
     def _get_harbors_edges(self):
         wrapping_edges = self._get_wrapping_edges()
         offsets = [4] * 3 + [3] * 6
-        random.shuffle(offsets)
+        self._shuffle(offsets)
         indices = [offsets[0] - 2]
         for i in range(1, len(offsets)):
             indices.append(offsets[i] + indices[i - 1])
-        edges = [wrapping_edges[i] for i in indices]
-        return edges
+        return [wrapping_edges[i] for i in indices]
 
     def _get_wrapping_edges(self):
         u, v = (3, 0)
@@ -645,3 +655,7 @@ class Board:
         for i in range(1, len(vertices[1:-1]) + 1):
             vertices_map[vertices[i]].append(lands[i - 1])
             vertices_map[vertices[i]].append(lands[i])
+
+    def _shuffle(self, sequence):
+        assert self._seed is None or 0 <= self._seed < 1
+        random.shuffle(sequence, self._seed)
