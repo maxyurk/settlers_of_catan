@@ -4,10 +4,22 @@ from algorithms.abstract_state import AbstractState
 from game.board import Resource
 from game.development_cards import DevelopmentCard
 from game.pieces import *
+from train_and_test import logger
+import numpy as np
 
 
 class AbstractPlayer(abc.ABC):
-    def __init__(self):
+    c = 0
+
+    def __init__(self, seed=None):
+        if seed is not None and not (0 <= seed < 1):
+            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
+                         ' was sent'.format(parameter_name=AbstractPlayer.__init__.__code__.co_varnames[1]))
+            seed = None
+        AbstractPlayer.c += 1
+        numpy_seed = None if seed is None else int(seed * AbstractPlayer.c)
+        self._random_choice = np.random.RandomState(seed=numpy_seed).choice
+
         self.resources = {r: 0 for r in Resource}
         self.pieces = {
             Colony.Settlement: 5,
@@ -16,6 +28,7 @@ class AbstractPlayer(abc.ABC):
         }
         self.unexposed_development_cards = {card: 0 for card in DevelopmentCard}
         self.exposed_development_cards = {card: 0 for card in DevelopmentCard}
+
 
     @abc.abstractmethod
     def choose_move(self, state: AbstractState):

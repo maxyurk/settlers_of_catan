@@ -1,7 +1,9 @@
 import logging
 import os
+from game.catan_state import CatanState
 from game.pieces import Colony, Road
-from players.alpha_beta_player import *
+from players.alpha_beta_player import AlphaBetaPlayer
+from players.random_player import RandomPlayer
 from train_and_test.logger import logger
 
 
@@ -41,9 +43,10 @@ def clean_previous_images():
 
 
 def main():
-    seed = None
-    p1 = AlphaBetaPlayer(1)
-    p2 = AlphaBetaPlayer(1)
+    seed = 0.35  #  0.35 - this number, when used with alpha-beta players, produces a very slow game
+    p1 = AlphaBetaPlayer(1, seed)
+    p2 = AlphaBetaPlayer(1, seed)
+    # p1 = RandomPlayer(seed)
     # p2 = RandomPlayer(seed)
     state = build_game([p1, p2], seed)
     clean_previous_images()
@@ -79,12 +82,14 @@ def main():
         if move.is_doing_anything():
             logger.info('\n{}:{} | turn: {} | move:{}'
                         .format(current_scores[p1], current_scores[p2], c, {k: v for k, v in move.__dict__.items() if v}))
-            state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
+            if __debug__:
+                state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
             logger.info('\n{}:{} | turn: {} | BUG. score changed, without movement.'
                         .format(current_scores[p1], current_scores[p2], c))
         else:
-            print('.', sep='', end='', flush=(c % 10 == 0))
+            pass
+            # print('.', sep='', end='', flush=(c % 10 == 0))
 
 if __name__ == '__main__':
     main()

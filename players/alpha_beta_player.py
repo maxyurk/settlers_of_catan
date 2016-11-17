@@ -5,8 +5,8 @@ from game.catan_state import CatanState
 
 
 class AlphaBetaPlayer(AbstractPlayer):
-    def __init__(self, max_depth: int = 5):
-        super().__init__()
+    def __init__(self, max_depth: int = 5, seed=None):
+        super().__init__(seed)
         self.expectimax_alpha_beta = AlphaBetaExpectimax(
             None, max_depth, lambda p: p == self, lambda s: s.get_scores_by_player()[self])
 
