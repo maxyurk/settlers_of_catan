@@ -1,6 +1,7 @@
 import abc
+from typing import Dict
 
-from algorithms.abstract_state import AbstractState
+from algorithms.abstract_state import AbstractState, AbstractMove
 from game.board import Resource
 from game.development_cards import DevelopmentCard
 from game.pieces import *
@@ -31,11 +32,20 @@ class AbstractPlayer(abc.ABC):
 
 
     @abc.abstractmethod
-    def choose_move(self, state: AbstractState):
-        """Implement decision mechanism here. the state is mutable and
-        it's NOT a copy so make sure you 'UNMAKE' every move you make!
+    def choose_move(self, state: AbstractState) -> AbstractMove:
+        """
+        Implement decision mechanism here
         :param state: Game state to help decide on a move
         :return: Selected AbstractMove to be made
+        """
+        pass
+
+    @abc.abstractmethod
+    def choose_resources_to_drop(self, state: AbstractState) -> Dict[Resource, int]:
+        """
+        Implement here decision which resources to drop when the dice roll 7
+        :param: state: Game state to help decide on a move
+        :return: Dict[Resource, int] from resoucres to the number of resources to drop
         """
         pass
 

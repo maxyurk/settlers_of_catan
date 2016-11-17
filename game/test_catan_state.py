@@ -14,6 +14,9 @@ class FakePlayer(AbstractPlayer):
     def choose_move(self, state: AbstractState):
         pass
 
+    def choose_resources_to_drop(self, state: AbstractState):
+        pass
+
 
 class TestCatanState(TestCase):
 
