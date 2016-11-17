@@ -9,6 +9,7 @@ from game.development_cards import DevelopmentCard
 from train_and_test import logger
 import numpy as np
 
+
 class CatanMove(AbstractMove):
     def __init__(self):
         # TODO add resource exchange mechanism
@@ -67,6 +68,33 @@ class CatanMove(AbstractMove):
         #       TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
 
 
+class RandomMove(AbstractMove):
+    def __init__(self, rolled_dice: int, state):
+        self._rolled_dice = rolled_dice
+        self._state = state
+        self._resources_by_players = {}
+
+    def apply(self):
+        if self._rolled_dice == 7:
+            update_method = AbstractPlayer.remove_resource
+            self._resources_by_players = {player: player.choose_resources_to_drop() for player in self._state.players}
+        else:
+            update_method = AbstractPlayer.add_resource
+            self._resources_by_players = self._state.board.get_players_to_resources_by_number(self._rolled_dice)
+        self._update_resources(update_method)
+
+    def revert(self):
+        if self._rolled_dice == 7:
+            update_method = AbstractPlayer.add_resource
+        else:
+            update_method = AbstractPlayer.remove_resource
+        self._update_resources(update_method)
+
+    def _update_resources(self, update_method):
+        for player, resources_to_amount in self._resources_by_players.items():
+            player.update_resources(resources_to_amount, update_method)
+
+
 class CatanState(AbstractState):
     def __init__(self, players: List[AbstractPlayer], seed=None):
         if seed is not None and not (0 <= seed < 1):
@@ -77,7 +105,7 @@ class CatanState(AbstractState):
         numpy_seed = (seed if seed is None else int(seed * 10))
         self._random_choice = np.random.RandomState(seed=numpy_seed).choice
 
-        self._players = players
+        self.players = players
         self._current_player_index = 0
         self.board = Board(seed)
 
@@ -109,14 +137,14 @@ class CatanState(AbstractState):
 
     def get_scores_by_player(self):
         players_points_count = {player: self.board.get_colonies_score(player)
-                                for player in self._players}
+                                for player in self.players}
         player, _ = self._get_largest_army_player_and_size()
         if player is not None:
             players_points_count[player] += 2
         player, _ = self._get_longest_road_player_and_length()
         if player is not None:
             players_points_count[player] += 2
-        for player in self._players:
+        for player in self.players:
             players_points_count[player] += player.get_victory_point_development_cards_count()
         return players_points_count
 
@@ -151,11 +179,11 @@ class CatanState(AbstractState):
                 self._player_with_longest_road.append(((self.get_current_player()), longest_road_length))
                 move.did_get_longest_road_card = True
 
-        self._current_player_index = (self._current_player_index + 1) % len(self._players)
+        self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
     def unmake_move(self, move: CatanMove):
         """reverts specified move"""
-        self._current_player_index = (self._current_player_index - 1) % len(self._players)
+        self._current_player_index = (self._current_player_index - 1) % len(self.players)
 
         move.revert(self)
 
@@ -164,7 +192,7 @@ class CatanState(AbstractState):
 
     def get_current_player(self):
         """returns the player that should play next"""
-        return self._players[self._current_player_index]
+        return self.players[self._current_player_index]
 
     numbers_to_probabilities = {}
     for i, p in zip(range(2, 7), range(1, 6)):
@@ -185,40 +213,20 @@ class CatanState(AbstractState):
         if rolled_dice_number is None:
             rolled_dice_number = self._random_choice(a=list(CatanState.numbers_to_probabilities.keys()),
                                                      p=list(CatanState.numbers_to_probabilities.values()))
-        self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.add_resource)
+        move = RandomMove(rolled_dice_number, self)
+        move.apply()
         # TODO handle moving robber when rolled 7
-        return rolled_dice_number
+        return move
 
-    def unthrow_dice(self, rolled_dice_number):
+    def unthrow_dice(self, move: RandomMove):
         """reverts the dice throwing and cards giving
-        :param rolled_dice_number: the number to undo it's cards giving
+        :param move: the random move to revert
         :return: None
         """
         # TODO handle unmoving robber when rolled 7
-        self._on_thrown_dice_update_resources(rolled_dice_number, AbstractPlayer.remove_resource)
+        move.revert()
 
-    def _on_thrown_dice_update_resources(self, rolled_dice_number,
-                                         add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]):
-        """
-        auxiliary method to give/take the cards need for specified number
-        :param rolled_dice_number: the number to give/take card by
-        :param add_or_remove_resource: Callable[[AbstractPlayer, Resource, int], None]
-        a function that gives/takes from the player the given amount of the given resource
-        it should either be AbstractPlayer.add_resource, or AbstractPlayer.remove_resource
-        :return: None
-        """
-        if rolled_dice_number == 7:
-            return
-
-        players_to_resources = self.board.get_players_to_resources_by_number(rolled_dice_number)
-
-        for player, resources_to_amount in players_to_resources.items():
-            for resource, resource_amount in resources_to_amount.items():
-                add_or_remove_resource(player, resource, resource_amount)
-
-    RoadLength = int
-
-    def _get_longest_road_player_and_length(self) -> Tuple[AbstractPlayer, RoadLength]:
+    def _get_longest_road_player_and_length(self) -> Tuple[AbstractPlayer, int]:
         """
         get player with longest road, and longest road length.
         if No one crossed the 5 roads threshold yet(which means the stack is empty),

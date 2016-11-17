@@ -8,7 +8,7 @@ from train_and_test.logger import logger
 
 
 def scores_changed(state, previous_scores, scores):
-    for player in state._players:
+    for player in state.players:
         if previous_scores[player] != scores[player]:
             return True
     return False

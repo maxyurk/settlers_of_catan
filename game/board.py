@@ -316,9 +316,9 @@ class Board:
         :return: Dict[player, Dict[Resource, int]], a dictionary of plaers to
         the resources they should receive
         """
+        assert 2 <= number <= 12 and number != 7
         lands_with_this_number = [land for land in self._lands
                                   if land[1] == number and self._robber_land != land]
-
         players_to_resources = {player: {resource: 0 for resource in Resource}
                                 for player in self._player_colonies_points.keys()}
         for land in lands_with_this_number:

@@ -55,10 +55,10 @@ class AlphaBetaExpectimax:
             v = 0
 
             for number, probability in self.state.get_numbers_to_probabilities().items():
-                self.state.throw_dice(rolled_dice_number=number)
+                random_move = self.state.throw_dice(number)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, False)
                 v += probability * u
-                self.state.unthrow_dice(rolled_dice_number=number)
+                self.state.unthrow_dice(random_move)
             return v, None
         elif self._is_maximizing_player(self.state.get_current_player()):
             v = -math.inf

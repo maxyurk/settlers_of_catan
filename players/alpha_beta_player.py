@@ -17,8 +17,8 @@ class AlphaBetaPlayer(AbstractPlayer):
         self.expectimax_alpha_beta.state = state
         return self.expectimax_alpha_beta.get_best_move()
 
-    def choose_resources_to_drop(self, state: AbstractState) -> Dict[Resource, int]:
+    def choose_resources_to_drop(self) -> Dict[Resource, int]:
         # TODO implement
         # for the meantime use the random choice of RandomPlayer
         # kind of a hack. but how awesome is that?!
-        return RandomPlayer.choose_resources_to_drop(self, state)
+        return RandomPlayer.choose_resources_to_drop(self)

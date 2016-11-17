@@ -1,6 +1,5 @@
 import abc
 from typing import Dict
-
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.board import Resource
 from game.development_cards import DevelopmentCard
@@ -30,7 +29,6 @@ class AbstractPlayer(abc.ABC):
         self.unexposed_development_cards = {card: 0 for card in DevelopmentCard}
         self.exposed_development_cards = {card: 0 for card in DevelopmentCard}
 
-
     @abc.abstractmethod
     def choose_move(self, state: AbstractState) -> AbstractMove:
         """
@@ -41,11 +39,11 @@ class AbstractPlayer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def choose_resources_to_drop(self, state: AbstractState) -> Dict[Resource, int]:
+    def choose_resources_to_drop(self) -> Dict[Resource, int]:
         """
         Implement here decision which resources to drop when the dice roll 7
         :param: state: Game state to help decide on a move
-        :return: Dict[Resource, int] from resoucres to the number of resources to drop
+        :return: Dict[Resource, int] from resources to the number of resources to drop
         """
         pass
 
@@ -66,6 +64,17 @@ class AbstractPlayer(abc.ABC):
         :return: None
         """
         self.add_resource(resource_type, -how_many)
+
+    def update_resources(self, resources_amount: Dict[Resource, int], update_method):
+        """
+        update resources according to given histogram, with given method
+        :param resources_amount: dictionary of the amounts of resources
+        :param update_method: add/remove/anything you may imagine.
+        i.e AbstractPlayer.add_resource/AbstractPlayer.add_resource
+        :return: None
+        """
+        for resource, amount in resources_amount.items():
+            update_method(self, resource, amount)
 
     def get_resource_count(self, resource_type: Resource):
         """

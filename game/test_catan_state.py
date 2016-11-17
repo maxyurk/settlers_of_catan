@@ -14,7 +14,7 @@ class FakePlayer(AbstractPlayer):
     def choose_move(self, state: AbstractState):
         pass
 
-    def choose_resources_to_drop(self, state: AbstractState):
+    def choose_resources_to_drop(self):
         pass
 
 
@@ -101,11 +101,7 @@ class TestCatanState(TestCase):
         land_number = self.state.board._lands[0][1]
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
-
-        # this is what happens in throw_dice, except I decided what the number is,
-        # instead of "throwing the dice"
-        self.state._on_thrown_dice_update_resources(land_number, AbstractPlayer.add_resource)
-
+        move = self.state.throw_dice(land_number)
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
     def test_unthrow_dice(self):
@@ -113,13 +109,11 @@ class TestCatanState(TestCase):
         land_resource = self.state.board._lands[0][0]
         land_number = self.state.board._lands[0][1]
 
-        # this is what happens in throw_dice, except I decided what the number is,
-        # instead of "throwing the dice"
-        self.state._on_thrown_dice_update_resources(land_number, AbstractPlayer.add_resource)
+        move = self.state.throw_dice(land_number)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
-        self.state.unthrow_dice(land_number)
+        self.state.unthrow_dice(move)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
 
