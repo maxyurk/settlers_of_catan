@@ -56,6 +56,7 @@ O      O      O
 """
 
 
+@enum.unique
 class Resource(enum.Enum):
     Brick = 1
     Lumber = 2
@@ -65,6 +66,7 @@ class Resource(enum.Enum):
     Desert = 6
 
 
+@enum.unique
 class Harbor(enum.Enum):
     """
     Harbor types. Harbors are locations one can exchange resources in.
@@ -85,12 +87,10 @@ Location = int
 A place that can be colonised (with a settlement, and later with a city)
 """
 
-
 Path = Tuple[Location, Location]
 """Path is an edge in the graph
 A place that a road can be paved in
 """
-
 
 RolledDiceNumber = int
 ID = int
@@ -113,7 +113,7 @@ class Board:
     lands = 'l'
     harbor = 'h'
 
-    def __init__(self, seed: int=None):
+    def __init__(self, seed: int = None):
         """
         Board of the game settlers of catan
         :param seed: optional parameter. send the same number in the range [0,1) to get the same map
