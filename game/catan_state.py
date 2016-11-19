@@ -168,16 +168,7 @@ class CatanState(AbstractState):
         # TODO when knight card is used, check if largest army has changed
         move.apply(self)
 
-        player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
-        current_player_max_road_length = self.board.get_player_largest_component_size(self.get_current_player())
-        current_player_max_road_length += len(move.paths_to_be_paved)
-        if current_player_max_road_length > length_threshold:
-        # if len(move.paths_to_be_paved) != 0:
-            longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
-
-            if longest_road_length > length_threshold:
-                self._player_with_longest_road.append(((self.get_current_player()), longest_road_length))
-                move.did_get_longest_road_card = True
+        self._update_longest_road(move)
 
         self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
@@ -187,17 +178,18 @@ class CatanState(AbstractState):
 
         move.revert(self)
 
-        if move.did_get_longest_road_card:
-            self._player_with_longest_road.pop()
+        self._revert_update_longest_road(move)
 
     def get_current_player(self):
         """returns the player that should play next"""
         return self.players[self._current_player_index]
 
     numbers_to_probabilities = {}
+
     for i, p in zip(range(2, 7), range(1, 6)):
         numbers_to_probabilities[i] = p / 36
         numbers_to_probabilities[14 - i] = p / 36
+
     numbers_to_probabilities[7] = 6 / 36
 
     def get_numbers_to_probabilities(self):
@@ -225,6 +217,19 @@ class CatanState(AbstractState):
         """
         # TODO handle unmoving robber when rolled 7
         move.revert()
+
+    def _update_longest_road(self, move):
+        if len(move.paths_to_be_paved) != 0:
+            player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
+            longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
+
+            if longest_road_length > length_threshold:
+                self._player_with_longest_road.append(((self.get_current_player()), longest_road_length))
+                move.did_get_longest_road_card = True
+
+    def _revert_update_longest_road(self, move):
+        if move.did_get_longest_road_card:
+            self._player_with_longest_road.pop()
 
     def _get_longest_road_player_and_length(self) -> Tuple[AbstractPlayer, int]:
         """

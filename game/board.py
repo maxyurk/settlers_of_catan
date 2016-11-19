@@ -229,15 +229,6 @@ class Board:
             return self._player_colonies_points[player]
         return 0
 
-    def get_player_largest_component_size(self, player, g=None):
-        if g is None:
-            roads_paved_by_player = [e for e in self._roads_and_colonies.edges()
-                                     if self.has_road_been_paved_by(player, e)]
-            g = networkx.Graph(roads_paved_by_player)
-        if g.size() == 0:
-            return 0
-        return max(networkx.connected_component_subgraphs(g, copy=False), key=len).size()
-
     def get_longest_road_length_of_player(self, player) -> int:
         """
         get the longest road length of specified player.
