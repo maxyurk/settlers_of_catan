@@ -63,7 +63,6 @@ class Resource(enum.Enum):
     Wool = 3
     Grain = 4
     Ore = 5
-    Desert = 6
 
 
 @enum.unique
@@ -539,7 +538,7 @@ class Board:
         self._shuffle(land_numbers)
         self._shuffle(land_resources)
 
-        land_resources.append(Resource.Desert)
+        land_resources.append(None)
         land_numbers.append(0)
 
         ids = range(len(land_resources))

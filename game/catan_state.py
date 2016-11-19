@@ -185,11 +185,9 @@ class CatanState(AbstractState):
         return self.players[self._current_player_index]
 
     numbers_to_probabilities = {}
-
     for i, p in zip(range(2, 7), range(1, 6)):
         numbers_to_probabilities[i] = p / 36
         numbers_to_probabilities[14 - i] = p / 36
-
     numbers_to_probabilities[7] = 6 / 36
 
     def get_numbers_to_probabilities(self):

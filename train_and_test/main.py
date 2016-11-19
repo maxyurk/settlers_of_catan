@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from game.catan_state import CatanState
 from game.pieces import Colony, Road
 from players.alpha_beta_player import AlphaBetaPlayer
@@ -43,7 +44,7 @@ def clean_previous_images():
 
 
 def main():
-    seed = 0.35  #  0.35 - this number, when used with alpha-beta players, produces a very slow game
+    seed = 0.2 #  0.35 - this number, when used with alpha-beta players, produces a very slow game
     p1 = AlphaBetaPlayer(1, seed)
     p2 = AlphaBetaPlayer(1, seed)
     # p1 = RandomPlayer(seed)
@@ -51,28 +52,26 @@ def main():
     state = build_game([p1, p2], seed)
     clean_previous_images()
 
+    start_time = time.time()
     c = 0
     previous_scores = state.get_scores_by_player()
     logger.info('\n{}:{} | turn: {} | game start'.format(previous_scores[p1], previous_scores[p2], c))
-    state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, previous_scores[p1], previous_scores[p2]))
+    if __debug__:
+        state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, previous_scores[p1], previous_scores[p2]))
     while not state.is_final():
         c += 1
 
         state.throw_dice()
         # --------------------------------------
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.info('\n~throw dice~')
+            logger.info('\n~BUG throw dice changed score~')
         # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.info('\n~choose move~')
+            logger.info('\n~BUG choose move changed score~')
         # --------------------------------------
         state.make_move(move)
-        # --------------------------------------
-        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.info('\n~make move~')
-        # --------------------------------------
 
         current_scores = state.get_scores_by_player()
         score_changed = scores_changed(state, previous_scores, current_scores)
@@ -80,8 +79,12 @@ def main():
             previous_scores = current_scores
 
         if move.is_doing_anything():
-            logger.info('\n{}:{} | turn: {} | move:{}'
-                        .format(current_scores[p1], current_scores[p2], c, {k: v for k, v in move.__dict__.items() if v}))
+            logger.info('\n{}:{} | turn: {} | time: {} | move:{}'
+                        .format(current_scores[p1],
+                                current_scores[p2],
+                                c,
+                                time.time() - start_time,
+                                {k: v for k, v in move.__dict__.items() if v}))
             if __debug__:
                 state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
