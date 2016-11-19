@@ -70,13 +70,14 @@ class Harbor(enum.Enum):
     Harbor types. Harbors are locations one can exchange resources in.
     specific harbors at 1:2 ratio (1 specific harbor per Resource type)
     generic at 1:3 ratio (4 generic harbors)
+    note that the enum numbers correspond to the Resource enum, for easy mapping between the two
     """
-    HarborBrick = 0
-    HarborLumber = 1
-    HarborWool = 2
-    HarborGrain = 3
-    HarborOre = 4
-    HarborGeneric = 5
+    HarborGeneric = 0
+    HarborBrick = Resource.Brick.value
+    HarborLumber = Resource.Lumber.value
+    HarborWool = Resource.Wool.value
+    HarborGrain = Resource.Grain.value
+    HarborOre = Resource.Ore.value
 
 
 Location = int
