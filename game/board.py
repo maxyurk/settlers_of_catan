@@ -58,11 +58,11 @@ O      O      O
 
 @enum.unique
 class Resource(enum.Enum):
-    Brick = 1
-    Lumber = 2
-    Wool = 3
-    Grain = 4
-    Ore = 5
+    Brick = 0
+    Lumber = 1
+    Wool = 2
+    Grain = 3
+    Ore = 4
 
 
 @enum.unique
@@ -73,12 +73,12 @@ class Harbor(enum.Enum):
     generic at 1:3 ratio (4 generic harbors)
     note that the enum numbers correspond to the Resource enum, for easy mapping between the two
     """
-    HarborGeneric = 0
     HarborBrick = Resource.Brick.value
     HarborLumber = Resource.Lumber.value
     HarborWool = Resource.Wool.value
     HarborGrain = Resource.Grain.value
     HarborOre = Resource.Ore.value
+    HarborGeneric = 5
 
 
 Location = int
@@ -453,13 +453,25 @@ class Board:
                 g.get_node(vertex).attr['fontsize'] = 25
                 g.get_node(vertex).attr['fontname'] = 'times-bold'
                 if self.get_colony_type_at_location(vertex) == Colony.City:
-                    g.get_node(vertex).attr['shape'] = 'box'
+                    g.get_node(vertex).attr['shape'] = 'doublecircle'
                 else:
                     g.get_node(vertex).attr['shape'] = 'circle'
                 g.get_node(vertex).attr['penwidth'] = 2
             for u, v in edges_by_players[player]:
                 g.get_edge(u, v).attr['color'] = color
                 g.get_edge(u, v).attr['penwidth'] = 2
+        for land in self._lands:
+            resource_name = 'desert' if land[0] is None else land[0].name
+            land_node_name = resource_name + '\n' + str(land[1])
+            g.add_node(land_node_name)
+            land_node = g.get_node(land_node_name)
+            land_node.attr['fontsize'] = 20
+            land_node.attr['fontname'] = 'times-bold'
+            land_node.attr['shape'] = 'hexagon'
+            land_node.attr['color'] = 'transparent'
+            for node in land[3]:
+                g.add_edge(node, land_node)
+                g.get_edge(node, land_node).attr['color'] = 'transparent'
         g.layout()
         g.draw(file_name)
 
