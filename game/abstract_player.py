@@ -51,7 +51,7 @@ class AbstractPlayer(abc.ABC):
     def add_resource(self, resource_type: Resource, how_many=1):
         """
         As the name implies
-        :param resource_type: Brick, Lumber, Wool, Grain, Ore, Desert
+        :param resource_type: Brick, Lumber, Wool, Grain, Ore
         :param how_many: number of resource units to add
         :return: None
         """

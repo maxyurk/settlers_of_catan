@@ -105,7 +105,7 @@ class CatanState(AbstractState):
                          ' was sent'.format(parameter_name=CatanState.__init__.__code__.co_varnames[2]))
             seed = None
 
-        numpy_seed = (seed if seed is None else int(seed * 10))
+        numpy_seed = (None if seed is None else int(seed * 10))
         self._random_choice = np.random.RandomState(seed=numpy_seed).choice
 
         self.players = players

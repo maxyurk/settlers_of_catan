@@ -124,7 +124,7 @@ class Board:
                          ' was sent'.format(parameter_name=Board.__init__.__code__.co_varnames[1]))
             seed = None
 
-        self._seed = seed
+        self._shuffle = lambda sequence: random.shuffle(sequence, None if seed is None else lambda: seed)
         self._player_colonies_points = {}
         self._players_by_roads = {}
 
@@ -690,7 +690,3 @@ class Board:
         for i in range(1, len(vertices[1:-1]) + 1):
             vertices_map[vertices[i]].append(lands[i - 1])
             vertices_map[vertices[i]].append(lands[i])
-
-    def _shuffle(self, sequence):
-        assert self._seed is None or 0 <= self._seed < 1
-        random.shuffle(sequence, None if self._seed is None else lambda: self._seed)
