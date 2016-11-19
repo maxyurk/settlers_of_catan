@@ -2,7 +2,7 @@ import copy
 import random
 from collections import namedtuple
 from typing import List, Callable, Tuple
-from game.board import Board, Resource, Harbor
+from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex
 from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
@@ -274,9 +274,8 @@ class CatanState(AbstractState):
             for i in range(int(player.get_resource_count(source_resource) / self._calc_curr_player_trade_ratio(
                     source_resource))):
                 no_dev_card_side_effect_trades = no_dev_card_side_effect_trades + \
-                                                 self._trades_permutations_i_cards_min_resource_index(i,
-                                                                                                      source_resource,
-                                                                                                      1)
+                                                 self._trades_permutations_i_cards_min_resource_index(
+                                                     i, source_resource, FirsResourceIndex)
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
@@ -285,8 +284,9 @@ class CatanState(AbstractState):
                 self.pretend_to_make_a_move(move)
                 for source_resource in Resource:
                     for i in range(int(player.get_resource_count(source_resource) /
-                                           self._calc_curr_player_trade_ratio(source_resource))):
-                        for trades in self._trades_permutations_i_cards_min_resource_index(i, source_resource, 1):
+                                               self._calc_curr_player_trade_ratio(source_resource))):
+                        for trades in self._trades_permutations_i_cards_min_resource_index(i, source_resource,
+                                                                                           FirsResourceIndex):
                             new_move = copy.deepcopy(move)
                             new_move.resources_exchanges = trades
                             new_moves.append(new_move)
@@ -315,7 +315,8 @@ class CatanState(AbstractState):
             return []
         if min_resource_index == source_resource.value:
             return self._trades_permutations_i_cards_min_resource_index(i, source_resource, min_resource_index + 1)
-        if min_resource_index == 5 or (min_resource_index == 4 and source_resource.value == 5):
+        if min_resource_index == LastResourceIndex or \
+                (min_resource_index == LastResourceIndex - 1 and source_resource.value == LastResourceIndex):
             trade = ResourceExchange(source_resource=source_resource,
                                      target_resource=Resource(min_resource_index),
                                      count=i)

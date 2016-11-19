@@ -63,6 +63,8 @@ class Resource(enum.Enum):
     Wool = 2
     Grain = 3
     Ore = 4
+LastResourceIndex = 4  # must be the same as the last resource
+FirsResourceIndex = 0  # must be the same as the first resource
 
 
 @enum.unique
