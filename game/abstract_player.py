@@ -13,6 +13,7 @@ class AbstractPlayer(abc.ABC):
 
     def __init__(self, seed=None):
         if seed is not None and not (0 <= seed < 1):
+            # noinspection PyUnresolvedReferences
             logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
                          ' was sent'.format(parameter_name=AbstractPlayer.__init__.__code__.co_varnames[1]))
             seed = None
@@ -234,3 +235,11 @@ class AbstractPlayer(abc.ABC):
         self.add_resource(Resource.Ore)
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)
+
+    def trade_resources(self, source_resource: Resource, target_resource: Resource, ratio: int):
+        self.remove_resource(source_resource, ratio)
+        self.add_resource(target_resource)
+
+    def un_trade_resources(self, source_resource: Resource, target_resource: Resource, ratio: int):
+        self.add_resource(source_resource, ratio)
+        self.remove_resource(target_resource)

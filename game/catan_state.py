@@ -1,7 +1,8 @@
 import copy
 import random
+from collections import namedtuple
 from typing import List, Callable, Tuple
-from game.board import Board, Resource
+from game.board import Board, Resource, Harbor
 from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
@@ -9,10 +10,12 @@ from game.development_cards import DevelopmentCard
 from train_and_test import logger
 import numpy as np
 
+ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_resource', 'count'])
+
 
 class CatanMove(AbstractMove):
     def __init__(self):
-        # TODO add resource exchange mechanism
+        self.resources_exchanges = []
         self.development_cards_to_be_exposed = []
         self.paths_to_be_paved = []
         self.locations_to_be_set_to_settlements = []
@@ -109,8 +112,8 @@ class CatanState(AbstractState):
         self._current_player_index = 0
         self.board = Board(seed)
 
-        self._dev_cards = [DevelopmentCard.Knight] * 15 +\
-                          [DevelopmentCard.VictoryPoint] * 5 +\
+        self._dev_cards = [DevelopmentCard.Knight] * 15 + \
+                          [DevelopmentCard.VictoryPoint] * 5 + \
                           [DevelopmentCard.RoadBuilding,
                            DevelopmentCard.Monopoly,
                            DevelopmentCard.YearOfPlenty] * 2
@@ -155,8 +158,9 @@ class CatanState(AbstractState):
         """
         empty_move = CatanMove()
         moves = [empty_move]
-        # TODO add resource exchange mechanism here
         moves = self._get_all_possible_development_cards_exposure_moves(moves)
+        # _get_all_possible_trade_moves is assuming it's after dev_cards moves and nothing else
+        moves = self._get_all_possible_trade_moves(moves)
         moves = self._get_all_possible_paths_moves(moves)
         moves = self._get_all_possible_settlements_moves(moves)
         moves = self._get_all_possible_cities_moves(moves)
@@ -196,7 +200,7 @@ class CatanState(AbstractState):
     def pop_development_card(self) -> DevelopmentCard:
         return self._dev_cards.pop()
 
-    def throw_dice(self, rolled_dice_number: int=None):
+    def throw_dice(self, rolled_dice_number: int = None):
         """throws the dice (if no number is given), and gives players the cards they need
         :return: the dice throwing result (a number in the range [2,12])
         """
@@ -248,7 +252,93 @@ class CatanState(AbstractState):
             return None, 0
         return self._player_with_largest_army[-1]
 
-    def _get_all_possible_development_cards_exposure_moves(self, moves: List[CatanMove]):
+    def _calc_curr_player_trade_ratio(self, source_resource: Resource):
+        curr_player = self.get_current_player()
+        if self.board.is_player_on_harbor(curr_player, Harbor(source_resource.value)):
+            return 2
+        if self.board.is_player_on_harbor(curr_player, Harbor.HarborGeneric):
+            return 3
+        return 4
+
+    def _get_all_possible_trade_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
+        """
+        NOTICE: assuming it's after dev_cards moves and nothing else
+        :param moves: moves so far
+        :return: moves with trades
+        """
+        player = self.get_current_player()
+        new_moves = []
+
+        no_dev_card_side_effect_trades = []
+        for source_resource in Resource:
+            for i in range(int(player.get_resource_count(source_resource) / self._calc_curr_player_trade_ratio(
+                    source_resource))):
+                no_dev_card_side_effect_trades = no_dev_card_side_effect_trades + \
+                                                 self._trades_permutations_i_cards_min_resource_index(i,
+                                                                                                      source_resource,
+                                                                                                      1)
+
+        for move in moves:
+            # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
+            if (DevelopmentCard.YearOfPlenty not in move.development_cards_to_be_exposed) and \
+                    (DevelopmentCard.Monopoly not in move.development_cards_to_be_exposed):
+                self.pretend_to_make_a_move(move)
+                for source_resource in Resource:
+                    for i in range(int(player.get_resource_count(source_resource) /
+                                           self._calc_curr_player_trade_ratio(source_resource))):
+                        for trades in self._trades_permutations_i_cards_min_resource_index(i, source_resource, 1):
+                            new_move = copy.deepcopy(move)
+                            new_move.resources_exchanges = trades
+                            new_moves.append(new_move)
+                self.revert_pretend_to_make_a_move(move)
+            else:
+                for trades in no_dev_card_side_effect_trades:
+                    new_move = copy.deepcopy(move)
+                    new_move.resources_exchanges = trades
+                    new_moves.append(new_move)
+
+        return moves + new_moves
+
+    def _trades_permutations_i_cards_min_resource_index(self, i, source_resource, min_resource_index) \
+            -> List[List[ResourceExchange]]:
+        """
+        Returns all possible trade combinations when making i trades
+        returns type is List[List[ResourceExchange]] : List of Lists of ResourceExchanges
+        all the counters in each list of ResourceExchanges sum to i.
+        :param i: exact number of trades (the list could have a single 'ResourceExchange' obj with count == i)
+        :param source_resource: the resource that returns to the cards stack
+        :param min_resource_index: the index of the minimal resource allowed to be traded (taken from the cards stack)(initial value is 1)
+        :return: Returns all possible trade combinations when making i trades
+                 Returns type is List[List[ResourceExchange]] : List of Lists of ResourceExchanges
+        """
+        if i == 0:
+            return []
+        if min_resource_index == source_resource.value:
+            return self._trades_permutations_i_cards_min_resource_index(i, source_resource, min_resource_index + 1)
+        if min_resource_index == 5 or (min_resource_index == 4 and source_resource.value == 5):
+            trade = ResourceExchange(source_resource=source_resource,
+                                     target_resource=Resource(min_resource_index),
+                                     count=i)
+            return [[trade]]
+
+        trades = []
+        for min_resource_trade_count in range(i):
+            partial_trades = self._trades_permutations_i_cards_min_resource_index(i - min_resource_trade_count,
+                                                                                  source_resource,
+                                                                                  min_resource_index + 1)
+            for partial_trade in partial_trades:
+                partial_trade.append(ResourceExchange(source_resource=source_resource,
+                                                      target_resource=Resource(min_resource_index),
+                                                      count=min_resource_trade_count))
+            trades = trades + partial_trades
+
+        min_resource_only_trade = ResourceExchange(source_resource=source_resource,
+                                                   target_resource=Resource(min_resource_index),
+                                                   count=i)
+        trades.append([min_resource_only_trade])
+        return trades
+
+    def _get_all_possible_development_cards_exposure_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
@@ -263,7 +353,7 @@ class CatanState(AbstractState):
             return moves
         return moves + self._get_all_possible_development_cards_exposure_moves(new_moves)
 
-    def _get_all_possible_paths_moves(self, moves: List[CatanMove]):
+    def _get_all_possible_paths_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
@@ -278,7 +368,7 @@ class CatanState(AbstractState):
             return moves
         return moves + self._get_all_possible_paths_moves(new_moves)
 
-    def _get_all_possible_settlements_moves(self, moves: List[CatanMove]):
+    def _get_all_possible_settlements_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
@@ -293,7 +383,7 @@ class CatanState(AbstractState):
             return moves
         return moves + self._get_all_possible_settlements_moves(new_moves)
 
-    def _get_all_possible_cities_moves(self, moves: List[CatanMove]):
+    def _get_all_possible_cities_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
@@ -308,13 +398,13 @@ class CatanState(AbstractState):
             return moves
         return moves + self._get_all_possible_cities_moves(new_moves)
 
-    def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]):
+    def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
             if (player.has_resources_for_development_card() and
-                    len(self._dev_cards) > move.development_cards_to_be_purchased_count):
+                        len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
@@ -329,6 +419,8 @@ class CatanState(AbstractState):
         for card in move.development_cards_to_be_exposed:
             # TODO apply side effect from card
             player.expose_development_card(card)
+        for exchange in move.resources_exchanges:
+            player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for path in move.paths_to_be_paved:
             self.board.set_path(player, path, Road.Paved)
             player.remove_resources_for_road()
@@ -339,7 +431,6 @@ class CatanState(AbstractState):
             self.board.set_location(player, loc2, Colony.City)
             player.remove_resources_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
-
             # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.remove_resources_for_development_card()
 
@@ -358,6 +449,8 @@ class CatanState(AbstractState):
         for path in move.paths_to_be_paved:
             self.board.set_path(player, path, Road.Unpaved)
             player.add_resources_for_road()
+        for exchange in move.resources_exchanges:
+            player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for card in move.development_cards_to_be_exposed:
             # TODO revert side effect from card
             player.un_expose_development_card(card)
