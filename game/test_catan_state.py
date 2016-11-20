@@ -5,6 +5,7 @@ from game.abstract_player import AbstractPlayer
 from game.board import Resource
 from game.catan_state import CatanState, CatanMove
 from game.pieces import Colony, Road
+from game.development_cards import DevelopmentCard
 
 
 class FakePlayer(AbstractPlayer):
@@ -114,6 +115,31 @@ class TestCatanState(TestCase):
         for move in self.state.get_next_moves():
             self.assertNotEqual(move.robber_placement_land, self.state.board.get_robber_land())
             self.assertNotEqual(move.robber_placement_land, None)
+
+    def test_largest_army_is_updated(self):
+        # given this board
+        for i in range(6):
+            if i % 2 == 1:
+                # on player2 turn, don't do anything
+                self.state.make_move(CatanMove())
+                continue
+
+            # assert no-one has largest army yet
+            player, threshold = self.state._get_largest_army_player_and_size()
+            self.assertEqual(player, None)
+            self.assertEqual(threshold, 2)
+
+            # add knight dev-card
+            self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
+
+            # expose the knight card
+            move = CatanMove()
+            move.development_cards_to_be_exposed = [DevelopmentCard.Knight]
+            self.state.make_move(move)
+
+        player, threshold = self.state._get_largest_army_player_and_size()
+        self.assertEqual(player, self.players[0])
+        self.assertEqual(threshold, 3)
 
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])

@@ -181,10 +181,10 @@ class CatanState(AbstractState):
 
     def make_move(self, move: CatanMove):
         """makes specified move"""
-        # TODO when knight card is used, check if largest army has changed
         move.apply(self)
 
         self._update_longest_road(move)
+        self._update_largest_army(move)
 
         self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
@@ -195,12 +195,14 @@ class CatanState(AbstractState):
         move.revert(self)
 
         self._revert_update_longest_road(move)
+        self._revert_update_largest_army(move)
 
     def get_current_player(self):
         """returns the player that should play next"""
         return self.players[self._current_player_index]
 
     numbers_to_probabilities = {}
+
     for i, p in zip(range(2, 7), range(1, 6)):
         numbers_to_probabilities[i] = p / 36
         numbers_to_probabilities[14 - i] = p / 36
@@ -230,19 +232,37 @@ class CatanState(AbstractState):
         """
         move.revert()
 
-    def _update_longest_road(self, move):
+    def _update_longest_road(self, move: CatanMove):
         # TODO this can be converted to something done in CatanMove
-        if len(move.paths_to_be_paved) != 0:
-            player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
-            longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
+        if len(move.paths_to_be_paved) == 0:
+            return
 
-            if longest_road_length > length_threshold:
-                self._player_with_longest_road.append(((self.get_current_player()), longest_road_length))
-                move.did_get_longest_road_card = True
+        player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
+        longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
 
-    def _revert_update_longest_road(self, move):
+        if longest_road_length > length_threshold:
+            self._player_with_longest_road.append((self.get_current_player(), longest_road_length))
+            move.did_get_longest_road_card = True
+
+    def _revert_update_longest_road(self, move: CatanMove):
         if move.did_get_longest_road_card:
             self._player_with_longest_road.pop()
+
+    def _update_largest_army(self, move: CatanMove):
+        # TODO this can be converted to something done in CatanMove
+        if move.development_cards_to_be_exposed.count(DevelopmentCard.Knight) == 0:
+            return
+
+        player_with_largest_army, size_threshold = self._get_largest_army_player_and_size()
+        army_size = self.get_current_player().get_exposed_knights_count()
+
+        if army_size > size_threshold:
+            self._player_with_largest_army.append((self.get_current_player(), army_size))
+            move.did_get_largest_army_card = True
+
+    def _revert_update_largest_army(self, move: CatanMove):
+        if move.did_get_largest_army_card:
+            self._player_with_largest_army.pop()
 
     def _get_longest_road_player_and_length(self) -> Tuple[AbstractPlayer, int]:
         """
@@ -259,8 +279,15 @@ class CatanState(AbstractState):
     KnightCardsCount = int
 
     def _get_largest_army_player_and_size(self) -> Tuple[AbstractPlayer, KnightCardsCount]:
+        """
+        get player with largest army, and largest army size.
+        if No one crossed the 2 knights threshold yet(which means the stack is empty),
+        return (None, 2) because there's no player yet, and that's the threshold to cross
+        else, return the last player to cross the threshold, and the threshold
+        :return: tuple of (player with longest road, longest road length)
+        """
         if not self._player_with_largest_army:
-            return None, 0
+            return None, 2
         return self._player_with_largest_army[-1]
 
     def _calc_curr_player_trade_ratio(self, source_resource: Resource):
