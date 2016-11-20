@@ -194,22 +194,25 @@ class AbstractPlayer(abc.ABC):
                 self.resources[Resource.Wool] >= 1 and
                 self.resources[Resource.Grain] >= 1)
 
-    def remove_resources_for_road(self):
+    def remove_resources_and_piece_for_road(self):
         assert self.can_pave_road()
         self.remove_resource(Resource.Brick)
         self.remove_resource(Resource.Lumber)
+        self.pieces[Road.Paved] -= 1
 
-    def remove_resources_for_settlement(self):
+    def remove_resources_and_piece_for_settlement(self):
         assert self.can_settle_settlement()
         self.remove_resource(Resource.Brick)
         self.remove_resource(Resource.Lumber)
         self.remove_resource(Resource.Wool)
         self.remove_resource(Resource.Grain)
+        self.pieces[Colony.Settlement] -= 1
 
-    def remove_resources_for_city(self):
+    def remove_resources_and_piece_for_city(self):
         assert self.can_settle_city()
         self.remove_resource(Resource.Ore, 3)
         self.remove_resource(Resource.Grain, 2)
+        self.pieces[Colony.City] -= 1
 
     def remove_resources_for_development_card(self):
         assert self.has_resources_for_development_card()
@@ -217,19 +220,22 @@ class AbstractPlayer(abc.ABC):
         self.remove_resource(Resource.Wool)
         self.remove_resource(Resource.Grain)
 
-    def add_resources_for_road(self):
+    def add_resources_and_piece_for_road(self):
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
+        self.pieces[Road.Paved] += 1
 
-    def add_resources_for_settlement(self):
+    def add_resources_and_piece_for_settlement(self):
         self.add_resource(Resource.Brick)
         self.add_resource(Resource.Lumber)
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)
+        self.pieces[Colony.Settlement] += 1
 
-    def add_resources_for_city(self):
+    def add_resources_and_piece_for_city(self):
         self.add_resource(Resource.Ore, 3)
         self.add_resource(Resource.Grain, 2)
+        self.pieces[Colony.City] += 1
 
     def add_resources_for_development_card(self):
         self.add_resource(Resource.Ore)

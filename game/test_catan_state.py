@@ -66,7 +66,7 @@ class TestCatanState(TestCase):
         self.assertEqual(move.development_cards_to_be_purchased_count, 0)
 
         # add resources to pave road
-        self.players[0].add_resources_for_road()
+        self.players[0].add_resources_and_piece_for_road()
 
         # assert only road paving in logical locations is possible
         moves = self.state.get_next_moves()
@@ -144,7 +144,7 @@ class TestCatanState(TestCase):
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])
 
-        self.players[0].add_resources_for_settlement()
+        self.players[0].add_resources_and_piece_for_settlement()
         move = CatanMove()
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
@@ -152,7 +152,7 @@ class TestCatanState(TestCase):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [0])
 
     def test_unmake_move(self):
-        self.players[0].add_resources_for_settlement()
+        self.players[0].add_resources_and_piece_for_settlement()
         move = CatanMove()
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)

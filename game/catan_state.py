@@ -465,13 +465,13 @@ class CatanState(AbstractState):
             player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for path in move.paths_to_be_paved:
             self.board.set_path(player, path, Road.Paved)
-            player.remove_resources_for_road()
+            player.remove_resources_and_piece_for_road()
         for loc1 in move.locations_to_be_set_to_settlements:
             self.board.set_location(player, loc1, Colony.Settlement)
-            player.remove_resources_for_settlement()
+            player.remove_resources_and_piece_for_settlement()
         for loc2 in move.locations_to_be_set_to_cities:
             self.board.set_location(player, loc2, Colony.City)
-            player.remove_resources_for_city()
+            player.remove_resources_and_piece_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
             # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.remove_resources_for_development_card()
@@ -487,13 +487,13 @@ class CatanState(AbstractState):
             player.add_resources_for_development_card()
         for loc2 in move.locations_to_be_set_to_cities:
             self.board.set_location(player, loc2, Colony.Settlement)
-            player.add_resources_for_city()
+            player.add_resources_and_piece_for_city()
         for loc1 in move.locations_to_be_set_to_settlements:
             self.board.set_location(player, loc1, Colony.Uncolonised)
-            player.add_resources_for_settlement()
+            player.add_resources_and_piece_for_settlement()
         for path in move.paths_to_be_paved:
             self.board.set_path(player, path, Road.Unpaved)
-            player.add_resources_for_road()
+            player.add_resources_and_piece_for_road()
         for exchange in move.resources_exchanges:
             player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for card in move.development_cards_to_be_exposed:
