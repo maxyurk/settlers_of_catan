@@ -470,11 +470,13 @@ class Board:
                 g.get_edge(u, v).attr['color'] = color
                 g.get_edge(u, v).attr['penwidth'] = 2
         for land in self._lands:
-            resource_name = 'desert' if land.resource is None else land.resource.name
-            robber = '*' if self._robber_land == land else ''
-            land_node_name = resource_name + '\n' + robber + '\n' + str(land.dice_value)
-            g.add_node(land_node_name)
-            land_node = g.get_node(land_node_name)
+            land_node_id = 'land ' + str(land.identifier)
+            g.add_node(land_node_id)
+            resource = 'desert' if land.resource is None else land.resource.name
+            robber = '*' if self._robber_land.identifier == land.identifier else ''
+            land_label = resource + '\n' + robber + '\n' + str(land.dice_value)
+            land_node = g.get_node(land_node_id)
+            land_node.attr['label'] = land_label
             land_node.attr['fontsize'] = 20
             land_node.attr['fontname'] = 'times-bold'
             land_node.attr['shape'] = 'hexagon'
