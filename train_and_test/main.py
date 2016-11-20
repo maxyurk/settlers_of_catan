@@ -44,11 +44,11 @@ def clean_previous_images():
 
 
 def main():
-    seed = 0.2 #  0.35 - this number, when used with alpha-beta players, produces a very slow game
-    p1 = AlphaBetaPlayer(1, seed)
-    p2 = AlphaBetaPlayer(1, seed)
+    seed = 0.79  # 0.35 - this number, when used with alpha-beta players, produces a very slow game
+    p1 = AlphaBetaPlayer(3, seed)
+    # p2 = AlphaBetaPlayer(1, seed)
     # p1 = RandomPlayer(seed)
-    # p2 = RandomPlayer(seed)
+    p2 = RandomPlayer(seed)
     state = build_game([p1, p2], seed)
     clean_previous_images()
 
@@ -63,13 +63,17 @@ def main():
 
         state.throw_dice()
         # --------------------------------------
+        #TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~BUG throw dice changed score~')
+            exit(1)
         # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
+        #TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~BUG choose move changed score~')
+            exit(1)
         # --------------------------------------
         state.make_move(move)
 
@@ -88,11 +92,10 @@ def main():
             if __debug__:
                 state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
+            #TODO remove
             logger.info('\n{}:{} | turn: {} | BUG. score changed, without movement.'
                         .format(current_scores[p1], current_scores[p2], c))
-        else:
-            pass
-            # print('.', sep='', end='', flush=(c % 10 == 0))
+            exit(1)
 
 if __name__ == '__main__':
     main()

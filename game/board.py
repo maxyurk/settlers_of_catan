@@ -302,8 +302,6 @@ class Board:
                 max_road_length = max(max_road_length, tree_diameter(g) - 1)
             else:
                 for w in g.nodes():
-                    if networkx.degree(g, w) == 2:
-                        continue
                     max_road_length = max(max_road_length, Board._compute_longest_road_length(g, w, set()))
                     if max_road_length == edges_count:
                         return max_road_length
