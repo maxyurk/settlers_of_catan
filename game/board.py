@@ -1,12 +1,12 @@
 import enum
-import random
-import matplotlib.pyplot
 import networkx
+import numpy as np
+import matplotlib.pyplot
+from collections import namedtuple
 from itertools import chain
 from operator import itemgetter
 from typing import List, Tuple, Set, Dict
 from algorithms.tree_diameter import tree_diameter
-
 from game.pieces import Colony, Road
 from train_and_test.logger import logger
 
@@ -84,24 +84,27 @@ class Harbor(enum.Enum):
 
 
 Location = int
-"""Location is a vertex in the graph
+"""
+Location is a vertex in the graph
 A place that can be colonised (with a settlement, and later with a city)
 """
 
 Path = Tuple[Location, Location]
-"""Path is an edge in the graph
+"""
+Path is an edge in the graph
 A place that a road can be paved in
 """
 
-RolledDiceNumber = int
-ID = int
-Land = Tuple[Resource, RolledDiceNumber, ID, List[Location]]
-"""Land is an element in the lands array
+
+Land = namedtuple('Land', ['resource', 'dice_value', 'identifier', 'locations', 'colonies'])
+"""
+Land is an element in the lands array
 A hexagon in the catan map, that has (in this order):
  -a resource type
  -a number between [2,12]
  -an id
  -Locations list (the locations around it)
+ -all adjacent colonies
 """
 
 
@@ -123,8 +126,8 @@ class Board:
             logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
                          ' was sent'.format(parameter_name=Board.__init__.__code__.co_varnames[1]))
             seed = None
-
-        self._shuffle = lambda sequence: random.shuffle(sequence, None if seed is None else lambda: seed)
+        numpy_seed = None if seed is None else int(seed * 10)
+        self._shuffle = np.random.RandomState(numpy_seed).shuffle
         self._player_colonies_points = {}
         self._players_by_roads = {}
 
@@ -306,25 +309,24 @@ class Board:
                         return max_road_length
         return max_road_length
 
-    def get_players_to_resources_by_number(self, number: RolledDiceNumber) -> Dict:
+    def get_players_to_resources_by_number(self, dice_value: int) -> Dict:
         """
         get the resources that players get when the dice roll specified number
-        :param number: the number the dice rolled
+        :param dice_value: the number the dice rolled
         :return: Dict[player, Dict[Resource, int]], a dictionary of plaers to
         the resources they should receive
         """
-        assert 2 <= number <= 12 and number != 7
+        assert 2 <= dice_value <= 12 and dice_value != 7
         lands_with_this_number = [land for land in self._lands
-                                  if land[1] == number and self._robber_land != land]
+                                  if land.dice_value == dice_value and self._robber_land != land]
         players_to_resources = {player: {resource: 0 for resource in Resource}
                                 for player in self._player_colonies_points.keys()}
         for land in lands_with_this_number:
-            resource = land[0]
-            for location in land[3]:
+            for location in land.locations:
                 if self.is_colonised(location):
                     player = self._roads_and_colonies.node[location][Board.player][0]
                     colony = self.get_colony_type_at_location(location)
-                    players_to_resources[player][resource] += colony.value
+                    players_to_resources[player][land.resource] += colony.value
         return players_to_resources
 
     def get_colony_type_at_location(self, location: Location) -> Colony:
@@ -333,9 +335,6 @@ class Board:
     def set_location(self, player, location: Location, colony: Colony):
         """
         settle/unsettle given colony type in given location by given player
-        NOTE that if the colony type is Colony.Uncolonised, then the player is irrelevant
-        if player is None or colony is Colony.Uncolonised,
-        the updated (player, colony) will be: (None ,Colony.Uncolonised)
         :param player: the player to settle/unsettle a settlement of
         :param location: the location to put the settlement on
         :param colony: the colony type to put (settlement/city)
@@ -345,13 +344,22 @@ class Board:
 
         if player not in self._player_colonies_points:
             self._player_colonies_points[player] = 0
+        vertex_attributes = self._roads_and_colonies.node[location]
+
         previous_colony = self.get_colony_type_at_location(location)
         self._player_colonies_points[player] -= previous_colony.value
         self._player_colonies_points[player] += colony.value
 
+        if colony is colony.Uncolonised and previous_colony is not colony.Uncolonised:
+            for land in vertex_attributes[Board.lands]:
+                land.colonies.pop()
+        elif colony is not colony.Uncolonised and previous_colony is colony.Uncolonised:
+            for land in vertex_attributes[Board.lands]:
+                land.colonies.append(colony)
+
         if colony == Colony.Uncolonised:
             player = None
-        self._roads_and_colonies.node[location][Board.player] = (player, colony)
+        vertex_attributes[Board.player] = (player, colony)
 
         if __debug__:
             sum_of_settlements_and_cities_points = 0
@@ -442,7 +450,6 @@ class Board:
         # matplotlib.pyplot.show()
 
         g = networkx.nx_agraph.to_agraph(self._roads_and_colonies)
-
         colors = ['orange', 'brown', 'blue', 'red']
         for player in vertices_by_players.keys():
             color = 'grey'
@@ -463,15 +470,16 @@ class Board:
                 g.get_edge(u, v).attr['color'] = color
                 g.get_edge(u, v).attr['penwidth'] = 2
         for land in self._lands:
-            resource_name = 'desert' if land[0] is None else land[0].name
-            land_node_name = resource_name + '\n' + str(land[1])
+            resource_name = 'desert' if land.resource is None else land.resource.name
+            robber = '*' if self._robber_land == land else ''
+            land_node_name = resource_name + '\n' + robber + '\n' + str(land.dice_value)
             g.add_node(land_node_name)
             land_node = g.get_node(land_node_name)
             land_node.attr['fontsize'] = 20
             land_node.attr['fontname'] = 'times-bold'
             land_node.attr['shape'] = 'hexagon'
             land_node.attr['color'] = 'transparent'
-            for node in land[3]:
+            for node in land.locations:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
         g.layout()
@@ -504,7 +512,7 @@ class Board:
         vertices_by_players[None] = [v for v in self._roads_and_colonies.nodes() if not self.is_colonised(v)]
         return vertices_by_players
 
-    def is_player_on_harbor(self, player, harbor: Harbor):
+    def is_player_on_harbor(self, player, harbor: Harbor) -> bool:
         """
         indicate whether specified player is settled on a location with specified harbor_type
         :param player: the player to check if he's settled on a location with given harbor-type
@@ -515,6 +523,10 @@ class Board:
             if self.is_colonised_by(player, location):
                 return True
         return False
+
+    def get_lands_to_place_robber_on(self) -> Set[Land]:
+        return [land for land in self._lands
+                if (len(land.colonies) != 0 and land != self._robber_land) or land.resource is None]
 
     _vertices_rows = [
         [i for i in range(0, 3)],
@@ -547,20 +559,22 @@ class Board:
 
     def _create_and_shuffle_lands(self):
         land_numbers = [2, 12] + [i for i in range(3, 12) if i != 7] * 2
-        land_resources = [Resource.Lumber, Resource.Wool, Resource.Grain] * 4 + \
-                         [Resource.Brick, Resource.Ore] * 3
+        land_resources = [Resource.Lumber, Resource.Wool, Resource.Grain
+                          ] * 4 + [Resource.Brick, Resource.Ore] * 3
         self._shuffle(land_numbers)
         self._shuffle(land_resources)
 
+        # get_lands_to_place_robber_on relies on the fact the 'desert' land.resource is None
         land_resources.append(None)
         land_numbers.append(0)
 
         ids = range(len(land_resources))
-
         locations = [[] for _ in range(len(land_resources))]
+        surrounding_colonies = [[] for _ in range(len(land_resources))]
 
-        lands = zip(land_resources, land_numbers, ids, locations)
-        self._lands = [land for land in lands]
+        lands = zip(land_resources, land_numbers, ids, locations, surrounding_colonies)
+        self._lands = [Land(*land) for land in lands]
+
         self._robber_land = self._lands[-1]
         # Note how the robber location relies on the fact that the last
         # land in the list is the desert
@@ -675,7 +689,7 @@ class Board:
     def _set_lands_attributes(vertices_to_lands):
         for location, lands in vertices_to_lands.items():
             for land in lands:
-                land[3].append(location)
+                land.locations.append(location)
 
     @staticmethod
     def _create_top_vertex_mapping(vertices_map, vertices, lands):

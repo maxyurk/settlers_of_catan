@@ -1,7 +1,6 @@
 import copy
-import random
 from collections import namedtuple
-from typing import List, Callable, Tuple
+from typing import List, Tuple
 from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex
 from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
@@ -14,7 +13,7 @@ ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_re
 
 
 class CatanMove(AbstractMove):
-    def __init__(self):
+    def __init__(self, robber_placement_land=None):
         self.resources_exchanges = []
         self.development_cards_to_be_exposed = []
         self.paths_to_be_paved = []
@@ -23,13 +22,15 @@ class CatanMove(AbstractMove):
         self.development_cards_to_be_purchased_count = 0
         self.did_get_largest_army_card = False
         self.did_get_longest_road_card = False
+        self.robber_placement_land = robber_placement_land
 
     def is_doing_anything(self):
         """
         indicate whether anything is done in this move
         :return: True if anything is done in this move, False otherwise
         """
-        return (len(self.development_cards_to_be_exposed) != 0 or
+        return (len(self.resources_exchanges) != 0 or
+                len(self.development_cards_to_be_exposed) != 0 or
                 len(self.paths_to_be_paved) != 0 or
                 len(self.locations_to_be_set_to_settlements) != 0 or
                 len(self.locations_to_be_set_to_cities) != 0 or
@@ -42,6 +43,8 @@ class CatanMove(AbstractMove):
         :return: None
         """
         assert isinstance(state, CatanState)
+        if self.robber_placement_land is None:
+            self.robber_placement_land = state.board.get_robber_land()
 
         # this does almost everything, the rest is done in this method
         state.pretend_to_make_a_move(self)
@@ -75,6 +78,7 @@ class RandomMove(AbstractMove):
     def __init__(self, rolled_dice: int, state):
         self._rolled_dice = rolled_dice
         self._state = state
+        self._previous_rolled_dice = self._state.current_dice_number
         self._resources_by_players = {}
 
     def apply(self):
@@ -85,6 +89,7 @@ class RandomMove(AbstractMove):
             update_method = AbstractPlayer.add_resource
             self._resources_by_players = self._state.board.get_players_to_resources_by_number(self._rolled_dice)
         self._update_resources(update_method)
+        self._state.current_dice_number = self._rolled_dice
 
     def revert(self):
         if self._rolled_dice == 7:
@@ -92,6 +97,7 @@ class RandomMove(AbstractMove):
         else:
             update_method = AbstractPlayer.remove_resource
         self._update_resources(update_method)
+        self._state.current_dice_number = self._previous_rolled_dice
 
     def _update_resources(self, update_method):
         for player, resources_to_amount in self._resources_by_players.items():
@@ -105,19 +111,22 @@ class CatanState(AbstractState):
                          ' was sent'.format(parameter_name=CatanState.__init__.__code__.co_varnames[2]))
             seed = None
 
-        numpy_seed = (None if seed is None else int(seed * 10))
-        self._random_choice = np.random.RandomState(seed=numpy_seed).choice
+        numpy_seed = None if seed is None else int(seed * 10)
+        random_state = np.random.RandomState(seed=numpy_seed)
+        self._random_choice = random_state.choice
 
         self.players = players
-        self._current_player_index = 0
         self.board = Board(seed)
+
+        self._current_player_index = 0
+        self.current_dice_number = 0
 
         self._dev_cards = [DevelopmentCard.Knight] * 15 + \
                           [DevelopmentCard.VictoryPoint] * 5 + \
                           [DevelopmentCard.RoadBuilding,
                            DevelopmentCard.Monopoly,
                            DevelopmentCard.YearOfPlenty] * 2
-        random.shuffle(self._dev_cards, None if seed is None else lambda: seed)
+        random_state.shuffle(self._dev_cards)
 
         # we must preserve these in the state, since it's possible a
         # player has one of the special cards, while some-one has the
@@ -156,8 +165,11 @@ class CatanState(AbstractState):
         Returns:
             List of AbstractMove: a list of the next moves
         """
-        empty_move = CatanMove()
-        moves = [empty_move]
+        if self.current_dice_number != 7:
+            empty_move = CatanMove()
+            moves = [empty_move]
+        else:
+            moves = [CatanMove(land) for land in self.board.get_lands_to_place_robber_on()]
         moves = self._get_all_possible_development_cards_exposure_moves(moves)
         # _get_all_possible_trade_moves is assuming it's after dev_cards moves and nothing else
         moves = self._get_all_possible_trade_moves(moves)
@@ -209,7 +221,6 @@ class CatanState(AbstractState):
                                                      p=list(CatanState.numbers_to_probabilities.values()))
         move = RandomMove(rolled_dice_number, self)
         move.apply()
-        # TODO handle moving robber when rolled 7
         return move
 
     def unthrow_dice(self, move: RandomMove):
@@ -217,10 +228,10 @@ class CatanState(AbstractState):
         :param move: the random move to revert
         :return: None
         """
-        # TODO handle unmoving robber when rolled 7
         move.revert()
 
     def _update_longest_road(self, move):
+        # TODO this can be converted to something done in CatanMove
         if len(move.paths_to_be_paved) != 0:
             player_with_longest_road, length_threshold = self._get_longest_road_player_and_length()
             longest_road_length = self.board.get_longest_road_length_of_player(self.get_current_player())
@@ -417,6 +428,9 @@ class CatanState(AbstractState):
     def pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
         player = self.get_current_player()
+        previous_robber_land_placement = self.board.get_robber_land()
+        self.board.set_robber_land(move.robber_placement_land)
+        move.robber_placement_land = previous_robber_land_placement
         for card in move.development_cards_to_be_exposed:
             # TODO apply side effect from card
             player.expose_development_card(card)
@@ -438,6 +452,9 @@ class CatanState(AbstractState):
     def revert_pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
         player = self.get_current_player()
+        robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
+        self.board.set_robber_land(move.robber_placement_land)
+        move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
         for count in range(0, move.development_cards_to_be_purchased_count):
             # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.add_resources_for_development_card()
