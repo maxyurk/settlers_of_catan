@@ -1,7 +1,8 @@
 from unittest import TestCase
-
+from math import ceil
 from algorithms.abstract_state import AbstractState
 from game.abstract_player import AbstractPlayer
+from game.board import Resource
 from game.catan_state import CatanState, CatanMove
 from game.pieces import Colony, Road
 
@@ -15,7 +16,21 @@ class FakePlayer(AbstractPlayer):
         pass
 
     def choose_resources_to_drop(self):
-        pass
+        sum_of_resources = sum(self.resources.values())
+        if sum_of_resources < 8:
+            return {}
+
+        drop_count = ceil(len(sum_of_resources) / 2)
+        resources_to_drop = {resource: 0 for resource in Resource}
+        for resource, resource_count in self.resources.items():
+            if resource_count >= drop_count:
+                resources_to_drop[resource] = drop_count
+                return resources_to_drop
+            else:
+                resources_to_drop[resource] = resource_count
+                drop_count -= resource_count
+
+        return resources_to_drop
 
 
 class TestCatanState(TestCase):
@@ -67,6 +82,38 @@ class TestCatanState(TestCase):
                 actual_possible_roads.add(move.paths_to_be_paved[0])
 
         self.assertSetEqual(expected_possible_roads, actual_possible_roads)
+
+    def test_get_next_moves_returns_only_moves_that_change_robber_placement_when_dice_roll_7(self):
+        # given this board
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 50, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (50, 46), Road.Paved)
+        self.state.board.set_path(self.players[1], (46, 42), Road.Paved)
+
+        # assert initial robber placement is on the desert land
+        self.assertEqual(self.state.board.get_robber_land().resource, None)
+
+        # roll 7
+        self.state.throw_dice(rolled_dice_number=7)
+
+        # assert all next moves move the robber
+        moves = self.state.get_next_moves()
+        for move in moves:
+            self.assertNotEqual(move.robber_placement_land, self.state.board.get_robber_land())
+            self.assertNotEqual(move.robber_placement_land, None)
+
+        # make some move
+        self.state.make_move(moves[0])
+
+        # roll 7 again
+        self.state.throw_dice(rolled_dice_number=7)
+
+        # assert all next moves move the robber again
+        for move in self.state.get_next_moves():
+            self.assertNotEqual(move.robber_placement_land, self.state.board.get_robber_land())
+            self.assertNotEqual(move.robber_placement_land, None)
 
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])

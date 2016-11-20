@@ -87,7 +87,7 @@ class RandomMove(AbstractMove):
             self._resources_by_players = {player: player.choose_resources_to_drop() for player in self._state.players}
         else:
             update_method = AbstractPlayer.add_resource
-            self._resources_by_players = self._state.board.get_players_to_resources_by_number(self._rolled_dice)
+            self._resources_by_players = self._state.board.get_players_to_resources_by_dice_value(self._rolled_dice)
         self._update_resources(update_method)
         self._state.current_dice_number = self._rolled_dice
 

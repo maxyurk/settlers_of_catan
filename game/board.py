@@ -309,7 +309,7 @@ class Board:
                         return max_road_length
         return max_road_length
 
-    def get_players_to_resources_by_number(self, dice_value: int) -> Dict:
+    def get_players_to_resources_by_dice_value(self, dice_value: int) -> Dict:
         """
         get the resources that players get when the dice roll specified number
         :param dice_value: the number the dice rolled
@@ -528,7 +528,8 @@ class Board:
 
     def get_lands_to_place_robber_on(self) -> Set[Land]:
         return [land for land in self._lands
-                if (len(land.colonies) != 0 and land != self._robber_land) or land.resource is None]
+                if land.identifier != self._robber_land.identifier
+                and (len(land.colonies) != 0 or land.resource is None)]
 
     _vertices_rows = [
         [i for i in range(0, 3)],
