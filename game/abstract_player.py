@@ -66,6 +66,11 @@ class AbstractPlayer(abc.ABC):
         """
         self.add_resource(resource_type, -how_many)
 
+    @staticmethod
+    def update_players_resources(resources_amounts_by_players, update_method):
+        for player, resources_to_amount in resources_amounts_by_players.items():
+            player.update_resources(resources_to_amount, update_method)
+
     def update_resources(self, resources_amount: Dict[Resource, int], update_method):
         """
         update resources according to given histogram, with given method

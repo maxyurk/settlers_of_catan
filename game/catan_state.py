@@ -43,6 +43,7 @@ class CatanMove(AbstractMove):
         :return: None
         """
         assert isinstance(state, CatanState)
+
         if self.robber_placement_land is None:
             self.robber_placement_land = state.board.get_robber_land()
 
@@ -63,6 +64,7 @@ class CatanMove(AbstractMove):
         :return: None
         """
         assert isinstance(state, CatanState)
+
         # this does almost everything, the rest is done in this method
         state.revert_pretend_to_make_a_move(self)
 
@@ -88,7 +90,7 @@ class RandomMove(AbstractMove):
         else:
             update_method = AbstractPlayer.add_resource
             self._resources_by_players = self._state.board.get_players_to_resources_by_dice_value(self._rolled_dice)
-        self._update_resources(update_method)
+        AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._rolled_dice
 
     def revert(self):
@@ -96,12 +98,8 @@ class RandomMove(AbstractMove):
             update_method = AbstractPlayer.add_resource
         else:
             update_method = AbstractPlayer.remove_resource
-        self._update_resources(update_method)
+        AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._previous_rolled_dice
-
-    def _update_resources(self, update_method):
-        for player, resources_to_amount in self._resources_by_players.items():
-            player.update_resources(resources_to_amount, update_method)
 
 
 class CatanState(AbstractState):

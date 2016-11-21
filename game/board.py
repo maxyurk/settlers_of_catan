@@ -291,6 +291,12 @@ class Board:
         # IDEA 6
         # ------
         # use graph-tool library, that claims to have better performance
+        # ------
+        # IDEA 7
+        # ------
+        # we have only two connected components. perhaps just starting from both initial villages is enough,
+        # and seraching for connected components is redundant. especially when there's only one
+
         connected_components_and_edge_count_sorted_by_edge_count = sorted(
             ((g, g.size()) for g in networkx.connected_component_subgraphs(sub_graph_of_player, copy=False)),
             key=itemgetter(1), reverse=True)
