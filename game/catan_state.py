@@ -402,7 +402,11 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
                     new_moves.append(new_move)
+            # elif (DevelopmentCard.RoadBuilding in move.development_cards_to_be_exposed) and \
+            #      (len(move.paths_to_be_paved) < 2):  # applying side effect of dev card
+            #     moves.remove(move)
             self.revert_pretend_to_make_a_move(move)
+
         if not new_moves:  # End of recursion
             return moves
         return moves + self._get_all_possible_paths_moves(new_moves)
@@ -499,3 +503,19 @@ class CatanState(AbstractState):
         for card in move.development_cards_to_be_exposed:
             # TODO revert side effect from card
             player.un_expose_development_card(card)
+
+    def _apply_dev_card_side_effect(self, card: DevelopmentCard):
+        curr_player = self.get_current_player()
+        if card is DevelopmentCard.Knight:
+            # TODO Arye should implement
+            pass
+        # elif card is DevelopmentCard.RoadBuilding:
+        #     # part of the side effect is implemented inside the road paving
+        #     curr_player.add_resources_and_piece_for_road()
+        #     curr_player.add_resources_and_piece_for_road()
+        elif card is DevelopmentCard.Monopoly:
+            # TODO implement
+            pass
+        elif card is DevelopmentCard.YearOfPlenty:
+            # TODO implement
+            pass
