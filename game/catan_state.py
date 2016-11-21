@@ -23,6 +23,7 @@ class CatanMove(AbstractMove):
         self.did_get_largest_army_card = False
         self.did_get_longest_road_card = False
         self.robber_placement_land = robber_placement_land
+        self.monopoly_card = None
 
     def is_doing_anything(self):
         """
@@ -381,7 +382,7 @@ class CatanState(AbstractState):
                 for unexposed_development_card in player.get_unexposed_development_cards():
                     robber_land = self.board.get_robber_land()
                     if (unexposed_development_card is DevelopmentCard.Knight and
-                            move.robber_placement_land == robber_land):
+                                move.robber_placement_land == robber_land):
                         robber_placement_lands = self.board.get_lands_to_place_robber_on()
                     else:
                         robber_placement_lands = [robber_land]
@@ -407,14 +408,21 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
                     new_moves.append(new_move)
-            # elif (DevelopmentCard.RoadBuilding in move.development_cards_to_be_exposed) and \
-            #      (len(move.paths_to_be_paved) < 2):  # applying side effect of dev card
-            #     moves.remove(move)
+            if (DevelopmentCard.RoadBuilding in move.development_cards_to_be_exposed) and \
+                    (len(move.paths_to_be_paved) < 2):  # applying side effect of dev card
+                moves.remove(move)
             self.revert_pretend_to_make_a_move(move)
 
         if not new_moves:  # End of recursion
             return moves
-        return moves + self._get_all_possible_paths_moves(new_moves)
+        players_road_building_dev_cards = player.unexposed_development_cards[DevelopmentCard.RoadBuilding]
+        if players_road_building_dev_cards > 0:  # optimization
+            moves_corresponding_to_dev_cards = [
+                x for x in moves if not ((DevelopmentCard.RoadBuilding in x.development_cards_to_be_exposed) and
+                                         (len(x.paths_to_be_paved) < 2 * players_road_building_dev_cards))]
+        else:
+            moves_corresponding_to_dev_cards = moves
+        return moves_corresponding_to_dev_cards + self._get_all_possible_paths_moves(new_moves)
 
     def _get_all_possible_settlements_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
@@ -470,7 +478,7 @@ class CatanState(AbstractState):
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = previous_robber_land_placement
         for card in move.development_cards_to_be_exposed:
-            # TODO apply side effect from card
+            self._apply_dev_card_side_effect(card)
             player.expose_development_card(card)
         for exchange in move.resources_exchanges:
             player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
@@ -508,7 +516,7 @@ class CatanState(AbstractState):
         for exchange in move.resources_exchanges:
             player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for card in move.development_cards_to_be_exposed:
-            # TODO revert side effect from card
+            self._revert_dev_card_side_effect(card)
             player.un_expose_development_card(card)
 
     def _apply_dev_card_side_effect(self, card: DevelopmentCard):
@@ -516,10 +524,25 @@ class CatanState(AbstractState):
         if card is DevelopmentCard.Knight:
             # TODO Arye should implement
             pass
-        # elif card is DevelopmentCard.RoadBuilding:
-        #     # part of the side effect is implemented inside the road paving
-        #     curr_player.add_resources_and_piece_for_road()
-        #     curr_player.add_resources_and_piece_for_road()
+        elif card is DevelopmentCard.RoadBuilding:
+            # All the moves that expose the card and don't make 2 new roads are removed
+            curr_player.add_resources_and_piece_for_road()
+            curr_player.add_resources_and_piece_for_road()
+        elif card is DevelopmentCard.Monopoly:
+            # TODO implement
+            pass
+        elif card is DevelopmentCard.YearOfPlenty:
+            # TODO implement
+            pass
+
+    def _revert_dev_card_side_effect(self, card: DevelopmentCard):
+        curr_player = self.get_current_player()
+        if card is DevelopmentCard.Knight:
+            # TODO Arye should implement
+            pass
+        elif card is DevelopmentCard.RoadBuilding:
+            curr_player.remove_resources_and_piece_for_road()
+            curr_player.remove_resources_and_piece_for_road()
         elif card is DevelopmentCard.Monopoly:
             # TODO implement
             pass
