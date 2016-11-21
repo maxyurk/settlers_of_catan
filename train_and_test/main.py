@@ -63,14 +63,14 @@ def main():
 
         state.throw_dice()
         # --------------------------------------
-        #TODO remove
+        # TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~BUG throw dice changed score~')
             exit(1)
         # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
-        #TODO remove
+        # TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
             logger.info('\n~BUG choose move changed score~')
             exit(1)
@@ -92,7 +92,7 @@ def main():
             if __debug__:
                 state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
-            #TODO remove
+            # TODO remove
             logger.info('\n{}:{} | turn: {} | BUG. score changed, without movement.'
                         .format(current_scores[p1], current_scores[p2], c))
             exit(1)

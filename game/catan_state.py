@@ -382,9 +382,19 @@ class CatanState(AbstractState):
             self.pretend_to_make_a_move(move)
             if player.has_unexposed_development_card():
                 for unexposed_development_card in player.get_unexposed_development_cards():
-                    new_move = copy.deepcopy(move)
-                    new_move.development_cards_to_be_exposed.append(unexposed_development_card)
-                    new_moves.append(new_move)
+                    robber_land = self.board.get_robber_land()
+                    if (unexposed_development_card is DevelopmentCard.Knight and
+                            move.robber_placement_land != robber_land):
+                        robber_placement_lands = self.board.get_lands_to_place_robber_on()
+                    else:
+                        robber_placement_lands = [robber_land]
+
+                    for land in robber_placement_lands:
+                        new_move = copy.deepcopy(move)
+                        new_move.development_cards_to_be_exposed.append(unexposed_development_card)
+                        new_move.robber_placement_land = land
+                        new_moves.append(new_move)
+
             self.revert_pretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
