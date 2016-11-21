@@ -44,9 +44,6 @@ class CatanMove(AbstractMove):
         """
         assert isinstance(state, CatanState)
 
-        if self.robber_placement_land is None:
-            self.robber_placement_land = state.board.get_robber_land()
-
         # this does almost everything, the rest is done in this method
         state.pretend_to_make_a_move(self)
 
@@ -384,7 +381,7 @@ class CatanState(AbstractState):
                 for unexposed_development_card in player.get_unexposed_development_cards():
                     robber_land = self.board.get_robber_land()
                     if (unexposed_development_card is DevelopmentCard.Knight and
-                            move.robber_placement_land != robber_land):
+                            move.robber_placement_land == robber_land):
                         robber_placement_lands = self.board.get_lands_to_place_robber_on()
                     else:
                         robber_placement_lands = [robber_land]
@@ -466,6 +463,8 @@ class CatanState(AbstractState):
 
     def pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
+        if move.robber_placement_land is None:
+            move.robber_placement_land = self.board.get_robber_land()
         player = self.get_current_player()
         previous_robber_land_placement = self.board.get_robber_land()
         self.board.set_robber_land(move.robber_placement_land)

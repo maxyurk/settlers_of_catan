@@ -144,13 +144,9 @@ class TestCatanState(TestCase):
         robber_placement = self.state.board.get_robber_land()
         self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
 
-        new_robber_placement = self.state.board._lands[0]
-        move = CatanMove(new_robber_placement)
-        move.development_cards_to_be_exposed.append(DevelopmentCard.Knight)
-        self.state.make_move(move)
-
-        self.assertEqual(self.state.board.get_robber_land(), new_robber_placement)
-        self.assertNotEqual(self.state.board.get_robber_land(), robber_placement)
+        for move in self.state.get_next_moves():
+            if DevelopmentCard.Knight in move.development_cards_to_be_exposed:
+                self.assertNotEqual(robber_placement, move.robber_placement_land)
 
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])
