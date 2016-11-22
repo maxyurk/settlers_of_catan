@@ -100,7 +100,8 @@ class RandomMove(AbstractMove):
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.add_resource
         else:
-            update_method = AbstractPlayer.remove_resourceAbstractPlayer.update_players_resources(self._resources_by_players, update_method)
+            update_method = AbstractPlayer.remove_resource
+        AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._previous_rolled_dice
 
 
