@@ -100,8 +100,7 @@ class RandomMove(AbstractMove):
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.add_resource
         else:
-            update_method = AbstractPlayer.remove_resource
-        AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
+            update_method = AbstractPlayer.remove_resourceAbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._previous_rolled_dice
 
 
@@ -539,8 +538,8 @@ class CatanState(AbstractState):
             pass
         elif card is DevelopmentCard.RoadBuilding:
             # All the moves that expose the card and don't make 2 new roads are removed
-            curr_player.add_resources_and_piece_for_road()
-            curr_player.add_resources_and_piece_for_road()
+            curr_player.add_resource(Resource.Brick, 2)
+            curr_player.add_resource(Resource.Lumber, 2)
         elif card is DevelopmentCard.Monopoly:
             # TODO implement
             pass
@@ -554,8 +553,8 @@ class CatanState(AbstractState):
             # TODO Arye should implement
             pass
         elif card is DevelopmentCard.RoadBuilding:
-            curr_player.remove_resources_and_piece_for_road()
-            curr_player.remove_resources_and_piece_for_road()
+            curr_player.remove_resource(Resource.Brick, 2)
+            curr_player.remove_resource(Resource.Lumber, 2)
         elif card is DevelopmentCard.Monopoly:
             # TODO implement
             pass
