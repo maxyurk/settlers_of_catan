@@ -1,7 +1,7 @@
 import copy
 from collections import namedtuple
 from typing import List, Tuple
-from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex
+from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts
 from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.abstract_player import AbstractPlayer
@@ -24,6 +24,7 @@ class CatanMove(AbstractMove):
         self.did_get_longest_road_card = False
         self.robber_placement_land = robber_placement_land
         self.monopoly_card = None
+        self.resources_updates = {}
 
     def is_doing_anything(self):
         """
@@ -82,6 +83,8 @@ class RandomMove(AbstractMove):
         self._resources_by_players = {}
 
     def apply(self):
+        if self._state.is_initialization_phase():
+            return
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.remove_resource
             self._resources_by_players = {player: player.choose_resources_to_drop() for player in self._state.players}
@@ -92,6 +95,8 @@ class RandomMove(AbstractMove):
         self._state.current_dice_number = self._rolled_dice
 
     def revert(self):
+        if self._state.is_initialization_phase():
+            return
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.add_resource
         else:
@@ -161,6 +166,9 @@ class CatanState(AbstractState):
         Returns:
             List of AbstractMove: a list of the next moves
         """
+        if self.is_initialization_phase():
+            return self._get_initialisation_moves()
+
         if self.current_dice_number != 7:
             empty_move = CatanMove()
             moves = [empty_move]
@@ -174,6 +182,9 @@ class CatanState(AbstractState):
         moves = self._get_all_possible_cities_moves(moves)
         moves = self._get_all_possible_development_cards_purchase_moves(moves)
         return moves
+
+    def is_initialization_phase(self):
+        return self.board.get_colonies_score(self.get_current_player()) < 2
 
     def make_move(self, move: CatanMove):
         """makes specified move"""
@@ -474,6 +485,7 @@ class CatanState(AbstractState):
         if move.robber_placement_land is None:
             move.robber_placement_land = self.board.get_robber_land()
         player = self.get_current_player()
+        player.update_resources(move.resources_updates, AbstractPlayer.add_resource)
         previous_robber_land_placement = self.board.get_robber_land()
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = previous_robber_land_placement
@@ -498,9 +510,6 @@ class CatanState(AbstractState):
     def revert_pretend_to_make_a_move(self, move: CatanMove):
         # TODO add resource exchange mechanism
         player = self.get_current_player()
-        robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
-        self.board.set_robber_land(move.robber_placement_land)
-        move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
         for count in range(0, move.development_cards_to_be_purchased_count):
             # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.add_resources_for_development_card()
@@ -518,6 +527,10 @@ class CatanState(AbstractState):
         for card in move.development_cards_to_be_exposed:
             self._revert_dev_card_side_effect(card)
             player.un_expose_development_card(card)
+        robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
+        self.board.set_robber_land(move.robber_placement_land)
+        move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
+        player.update_resources(move.resources_updates, AbstractPlayer.remove_resource)
 
     def _apply_dev_card_side_effect(self, card: DevelopmentCard):
         curr_player = self.get_current_player()
@@ -549,3 +562,64 @@ class CatanState(AbstractState):
         elif card is DevelopmentCard.YearOfPlenty:
             # TODO implement
             pass
+
+    initialisation_resources = ResourceAmounts().add_road().add_settlement()
+    # for resource, amount in ResourceAmounts.settlement.items():
+    #     initialisation_resources[resource] = amount
+    # for resource, amount in ResourceAmounts.road.items():
+    #     initialisation_resources[resource] += amount
+
+    def _get_initialisation_moves(self):
+        player = self.get_current_player()
+        assert sum(player.resources.values()) == 0
+
+        player.update_resources(ResourceAmounts.settlement, AbstractPlayer.add_resource)
+        moves = self._add_settlements_to_initialisation_moves()
+
+        player.update_resources(ResourceAmounts.road, AbstractPlayer.add_resource)
+        moves = self._add_roads_to_initialisation_moves(moves)
+
+        # remove resources given to player now, and give it to him when the move will actually be made.
+        # that way there's no side-effect to this method, and 'revert' the move would be easy
+        player.update_resources(CatanState.initialisation_resources, AbstractPlayer.remove_resource)
+        for move in moves:
+            move.resources_updates = CatanState.initialisation_resources
+
+        return moves
+
+    def _add_roads_to_initialisation_moves(self, moves):
+        moves = [move for move in self._get_all_possible_paths_moves(moves) if move not in moves]
+        assert all([(len(move.resources_exchanges) == 0 and
+                     len(move.development_cards_to_be_exposed) == 0 and
+                     len(move.paths_to_be_paved) == 1 and
+                     len(move.locations_to_be_set_to_settlements) == 1 and
+                     len(move.locations_to_be_set_to_cities) == 0 and
+                     move.development_cards_to_be_purchased_count == 0 and
+                     not move.did_get_largest_army_card and
+                     not move.did_get_longest_road_card and
+                     move.robber_placement_land == self.board.get_robber_land())
+                    for move in moves])
+
+        def valid_path_paved(move):
+            path = move.paths_to_be_paved[0]
+            settlement = move.locations_to_be_set_to_settlements[0]
+            return settlement in path
+        moves = [move for move in moves if valid_path_paved(move)]
+        return moves
+
+    def _add_settlements_to_initialisation_moves(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self._get_all_possible_settlements_moves(moves)
+        moves.remove(empty_move)
+        assert all([(len(move.resources_exchanges) == 0 and
+                     len(move.development_cards_to_be_exposed) == 0 and
+                     len(move.paths_to_be_paved) == 0 and
+                     len(move.locations_to_be_set_to_settlements) == 1 and
+                     len(move.locations_to_be_set_to_cities) == 0 and
+                     move.development_cards_to_be_purchased_count == 0 and
+                     not move.did_get_largest_army_card and
+                     not move.did_get_longest_road_card and
+                     move.robber_placement_land == self.board.get_robber_land()) for move in moves])
+        return moves
+

@@ -63,8 +63,66 @@ class Resource(enum.Enum):
     Wool = 2
     Grain = 3
     Ore = 4
+
 LastResourceIndex = 4  # must be the same as the last resource
 FirsResourceIndex = 0  # must be the same as the first resource
+
+
+class ResourceAmounts(dict):
+    road = {
+        Resource.Brick: 1,
+        Resource.Lumber: 1,
+        Resource.Wool: 0,
+        Resource.Grain: 0,
+        Resource.Ore: 0,
+    }
+
+    settlement = {
+        Resource.Brick: 1,
+        Resource.Lumber: 1,
+        Resource.Wool: 1,
+        Resource.Grain: 1,
+        Resource.Ore: 0
+    }
+
+    city = {
+        Resource.Brick: 0,
+        Resource.Lumber: 0,
+        Resource.Wool: 0,
+        Resource.Grain: 2,
+        Resource.Ore: 3
+    }
+
+    development_card = {
+        Resource.Brick: 0,
+        Resource.Lumber: 0,
+        Resource.Wool: 1,
+        Resource.Grain: 1,
+        Resource.Ore: 1,
+    }
+
+    def __init__(self):
+        super().__init__({resource: 0 for resource in Resource})
+
+    def _add(self, resources_amount):
+        for resource, amount in resources_amount.items():
+            self[resource] += amount
+
+    def add_road(self):
+        self._add(ResourceAmounts.road)
+        return self
+
+    def add_settlement(self):
+        self._add(ResourceAmounts.settlement)
+        return self
+
+    def add_city(self):
+        self._add(ResourceAmounts.city)
+        return self
+
+    def add_development_card(self):
+        self._add(ResourceAmounts.development_card)
+        return self
 
 
 @enum.unique
@@ -96,16 +154,18 @@ A place that a road can be paved in
 """
 
 
-Land = namedtuple('Land', ['resource', 'dice_value', 'identifier', 'locations', 'colonies'])
-"""
-Land is an element in the lands array
-A hexagon in the catan map, that has (in this order):
- -a resource type
- -a number between [2,12]
- -an id
- -Locations list (the locations around it)
- -all adjacent colonies
-"""
+class Land(namedtuple('LandTuple', ['resource', 'dice_value', 'identifier', 'locations', 'colonies'])):
+    """
+    Land is an element in the lands array
+    A hexagon in the catan map, that has (in this order):
+     -a resource type
+     -a number between [2,12]
+     -an id
+     -Locations list (the locations around it)
+     -all adjacent colonies
+    """
+    def __deepcopy__(self, memodict={}):
+        return self
 
 
 def path_key(edge):
@@ -150,9 +210,25 @@ class Board:
         :param player: the player to get settleable location by
         :return: list of locations on map that the player can settle locations on
         """
-        non_colonised = [v for v in self._roads_and_colonies.nodes()
-                         if not self.is_colonised(v)]
+        colonised_by_player_count = 0
+        non_colonised = []
+        for v in self._roads_and_colonies.nodes():
+            if self.is_colonised_by(player, v):
+                colonised_by_player_count += 1
+            elif not self.is_colonised(v):
+                non_colonised.append(v)
+
+        if colonised_by_player_count < 2:
+            def condition_on_path(path):
+                return True
+        else:
+            def condition_on_path(path):
+                return self.has_road_been_paved_by(player, path)
+
         coloniseable = []
+        # make sure there's no settlement one-hop from settleable locations
+        # and that there's an edge from that location, u-v
+        # the 2nd condition (edge u-v exists) is checked only if it isn't the first 2 settlements
         for u in non_colonised:
             is_coloniseable = True
             one_hop_from_non_colonised = []
@@ -160,17 +236,22 @@ class Board:
                 if self.is_colonised(v):
                     is_coloniseable = False
                     break
-                if self.has_road_been_paved_by(player, (u, v)):
+                if condition_on_path((u, v)):
                     one_hop_from_non_colonised.append(v)
             if not is_coloniseable:
                 continue
 
-            is_coloniseable = False
-            for v in one_hop_from_non_colonised:
-                for w in self._roads_and_colonies.neighbors(v):
-                    if w != u and self.has_road_been_paved_by(player, (v, w)):
-                        is_coloniseable = True
-                        break
+            if colonised_by_player_count >= 2:
+                # make sure there's another edge from u
+                # that is, there's a road u-v-w paved by this player
+                # this is checked only if it isn't the first 2 settlements
+                is_coloniseable = False
+                for v in one_hop_from_non_colonised:
+                    for w in self._roads_and_colonies.neighbors(v):
+                        if w != u and condition_on_path((u, v)):
+                            is_coloniseable = True
+                            break
+
             if is_coloniseable:
                 coloniseable.append(u)
         return coloniseable
@@ -202,8 +283,14 @@ class Board:
         :param player: the player to get paths on map that he can pave
         :return: list of paths the player can pave a road in
         """
-        roads = [e for e in self._roads_and_colonies.edges()
-                 if self.has_road_been_paved_by(player, e)]
+        roads = [e for e in self._roads_and_colonies.edges() if self.has_road_been_paved_by(player, e)]
+
+        less_than_two_roads_paved = len(roads) < 2
+        if less_than_two_roads_paved:
+            return [(u, v) for u in self.get_settlements_by_player(player)
+                    for v in self._roads_and_colonies.neighbors(u)
+                    if self.has_road_been_paved_by(None, (u, v))]
+
         uncolonised_by_other_players = [v for v in set(chain(*roads))
                                         if self.is_colonised_by(player, v) or not self.is_colonised(v)]
         return [(u, v) for u in uncolonised_by_other_players

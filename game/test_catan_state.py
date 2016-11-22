@@ -14,7 +14,7 @@ class FakePlayer(AbstractPlayer):
         self.id = identifier
 
     def choose_move(self, state: AbstractState):
-        pass
+        raise NotImplementedError()
 
     def choose_resources_to_drop(self):
         sum_of_resources = sum(self.resources.values())
@@ -52,6 +52,7 @@ class TestCatanState(TestCase):
     def test_get_next_moves_given_resources_for_single_road(self):
         # given this board
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
         self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
         self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
 
@@ -87,9 +88,11 @@ class TestCatanState(TestCase):
     def test_get_next_moves_returns_only_moves_that_change_robber_placement_when_dice_roll_7(self):
         # given this board
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
         self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
         self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
         self.state.board.set_location(self.players[1], 50, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 42, Colony.Settlement)
         self.state.board.set_path(self.players[1], (50, 46), Road.Paved)
         self.state.board.set_path(self.players[1], (46, 42), Road.Paved)
 
@@ -177,6 +180,10 @@ class TestCatanState(TestCase):
 
     def test_throw_dice(self):
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 1, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
+        self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
+
         land_resource = self.state.board._lands[0][0]
         land_number = self.state.board._lands[0][1]
 
@@ -186,6 +193,10 @@ class TestCatanState(TestCase):
 
     def test_unthrow_dice(self):
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 1, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
+        self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
+
         land_resource = self.state.board._lands[0][0]
         land_number = self.state.board._lands[0][1]
 

@@ -37,7 +37,7 @@ class AbstractPlayer(abc.ABC):
         :param state: Game state to help decide on a move
         :return: Selected AbstractMove to be made
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def choose_resources_to_drop(self) -> Dict[Resource, int]:
@@ -46,7 +46,7 @@ class AbstractPlayer(abc.ABC):
         :param: state: Game state to help decide on a move
         :return: Dict[Resource, int] from resources to the number of resources to drop
         """
-        pass
+        raise NotImplementedError()
 
     def add_resource(self, resource_type: Resource, how_many=1):
         """
