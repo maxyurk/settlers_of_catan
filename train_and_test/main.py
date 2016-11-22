@@ -100,7 +100,7 @@ def execute_game():
 
 
 def main():
-    for _ in range(3):
+    for _ in range(1):
         execute_game()
 
 if __name__ == '__main__':

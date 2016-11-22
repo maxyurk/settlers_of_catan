@@ -129,10 +129,11 @@ class AbstractPlayer(abc.ABC):
         self.exposed_development_cards[card] -= 1
 
     def get_unexposed_development_cards(self):
-        for card_type, amount in self.unexposed_development_cards.items():
-            for _ in range(amount):
-                if card_type != DevelopmentCard.VictoryPoint:
-                    yield card_type
+        # for card_type, amount in self.unexposed_development_cards.items():
+        #     for _ in range(amount):
+        #         if card_type != DevelopmentCard.VictoryPoint:
+        #             yield card_type
+        return self.unexposed_development_cards
 
     def get_exposed_knights_count(self) -> int:
         """
