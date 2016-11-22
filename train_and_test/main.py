@@ -85,17 +85,14 @@ def execute_game():
 
         if move.is_doing_anything():
             logger.info('\np1 {}:p2 {} | turn: {} | time: {} | move:{}'
-                        .format(current_scores[p1],
-                                current_scores[p2],
-                                c,
-                                time.time() - start_time,
+                        .format(current_scores[p1], current_scores[p2], c, time.time() - start_time,
                                 {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates'}))
             if __debug__:
                 state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
         elif score_changed:
             # TODO remove
             logger.error('\np1 {}:p2 {} | turn: {} | BUG. score changed, without movement.'
-                        .format(current_scores[p1], current_scores[p2], c))
+                         .format(current_scores[p1], current_scores[p2], c))
             exit(1)
 
 

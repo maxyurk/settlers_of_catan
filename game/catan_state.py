@@ -395,6 +395,17 @@ class CatanState(AbstractState):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_exposed = expose_option
                 new_moves.append(new_move)
+        knight_applied_moves, non_knight_applied_moves = [], []
+        for move in new_moves:
+            if (DevelopmentCard.Knight not in move.development_cards_to_be_exposed
+               or move.robber_placement_land != self.board.get_robber_land()):
+                non_knight_applied_moves.append(move)
+                continue
+            for land in self.board.get_lands_to_place_robber_on():
+                new_move = copy.deepcopy(move)
+                new_move.robber_placement_land = land
+                knight_applied_moves.append(new_move)
+        new_moves = knight_applied_moves + non_knight_applied_moves
         return moves + new_moves
 
     def _get_dev_card_exposure_moves_min_card_index(self, min_dev_card_index) -> List[List[DevelopmentCard]]:
@@ -416,31 +427,6 @@ class CatanState(AbstractState):
             for later_cards_expose_option in later_cards_expose_options:
                 res.append(curr_card_expose_option + later_cards_expose_option)
         return res
-
-    # def _get_all_possible_development_cards_exposure_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
-    #     player = self.get_current_player()
-    #     new_moves = []
-    #     for move in moves:
-    #         self.pretend_to_make_a_move(move)
-    #         if player.has_unexposed_development_card():
-    #             for unexposed_development_card in player.get_unexposed_development_cards():
-    #                 robber_land = self.board.get_robber_land()
-    #                 if (unexposed_development_card is DevelopmentCard.Knight and
-    #                             move.robber_placement_land == robber_land):
-    #                     robber_placement_lands = self.board.get_lands_to_place_robber_on()
-    #                 else:
-    #                     robber_placement_lands = [robber_land]
-    #
-    #                 for land in robber_placement_lands:
-    #                     new_move = copy.deepcopy(move)
-    #                     new_move.development_cards_to_be_exposed.append(unexposed_development_card)
-    #                     new_move.robber_placement_land = land
-    #                     new_moves.append(new_move)
-    #
-    #         self.revert_pretend_to_make_a_move(move)
-    #     if not new_moves:  # End of recursion
-    #         return moves
-    #     return moves + self._get_all_possible_development_cards_exposure_moves(new_moves)
 
     def _get_all_possible_paths_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
@@ -597,11 +583,6 @@ class CatanState(AbstractState):
             pass
 
     initialisation_resources = ResourceAmounts().add_road().add_settlement()
-
-    # for resource, amount in ResourceAmounts.settlement.items():
-    #     initialisation_resources[resource] = amount
-    # for resource, amount in ResourceAmounts.road.items():
-    #     initialisation_resources[resource] += amount
 
     def _get_initialisation_moves(self):
         player = self.get_current_player()
