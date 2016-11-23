@@ -1,6 +1,6 @@
 import copy
-from collections import namedtuple
-from typing import List, Tuple
+from collections import namedtuple, defaultdict
+from typing import List, Tuple, Dict
 from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts
 from game.pieces import Colony, Road
 from algorithms.abstract_state import AbstractState, AbstractMove
@@ -15,7 +15,7 @@ ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_re
 class CatanMove(AbstractMove):
     def __init__(self, robber_placement_land=None):
         self.resources_exchanges = []
-        self.development_cards_to_be_exposed = []
+        self.development_cards_to_be_exposed = defaultdict(int)
         self.paths_to_be_paved = []
         self.locations_to_be_set_to_settlements = []
         self.locations_to_be_set_to_cities = []
@@ -32,7 +32,7 @@ class CatanMove(AbstractMove):
         :return: True if anything is done in this move, False otherwise
         """
         return (len(self.resources_exchanges) != 0 or
-                len(self.development_cards_to_be_exposed) != 0 or
+                sum(self.development_cards_to_be_exposed.values()) != 0 or
                 len(self.paths_to_be_paved) != 0 or
                 len(self.locations_to_be_set_to_settlements) != 0 or
                 len(self.locations_to_be_set_to_cities) != 0 or
@@ -253,7 +253,7 @@ class CatanState(AbstractState):
 
     def _update_largest_army(self, move: CatanMove):
         # TODO this can be converted to something done in CatanMove
-        if move.development_cards_to_be_exposed.count(DevelopmentCard.Knight) == 0:
+        if move.development_cards_to_be_exposed[DevelopmentCard.Knight] == 0:
             return
 
         player_with_largest_army, size_threshold = self._get_largest_army_player_and_size()
@@ -320,8 +320,8 @@ class CatanState(AbstractState):
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
-            if (DevelopmentCard.YearOfPlenty not in move.development_cards_to_be_exposed) and \
-                    (DevelopmentCard.Monopoly not in move.development_cards_to_be_exposed):
+            if (move.development_cards_to_be_exposed[DevelopmentCard.YearOfPlenty] == 0) and \
+                    (move.development_cards_to_be_exposed[DevelopmentCard.Monopoly] == 0):
                 self.pretend_to_make_a_move(move)
                 for source_resource in Resource:
                     for i in range(int(player.get_resource_count(source_resource) /
@@ -391,10 +391,11 @@ class CatanState(AbstractState):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_exposed = expose_option
                 new_moves.append(new_move)
+        # Knight
         knight_applied_moves, non_knight_applied_moves = [], []
         for move in new_moves:
-            if (DevelopmentCard.Knight not in move.development_cards_to_be_exposed
-               or move.robber_placement_land != self.board.get_robber_land()):
+            if move.development_cards_to_be_exposed[DevelopmentCard.Knight] != 0 or \
+                            move.robber_placement_land != self.board.get_robber_land():
                 non_knight_applied_moves.append(move)
                 continue
             for land in self.board.get_lands_to_place_robber_on():
@@ -402,27 +403,71 @@ class CatanState(AbstractState):
                 new_move.robber_placement_land = land
                 knight_applied_moves.append(new_move)
         new_moves = knight_applied_moves + non_knight_applied_moves
+        # year of plenty
+        year_of_plenty_applied_moves = []
+        moves_without_y_o_p = []
+        for move in new_moves:
+            y_o_p_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.YearOfPlenty]
+            if y_o_p_cards_count != 0:
+                for option in self._get_year_of_plenty_resource_options_min_resource_index(y_o_p_cards_count * 2):
+                    new_move = copy.deepcopy(move)
+                    new_move.resources_updates = option
+                    year_of_plenty_applied_moves.append(new_move)
+            else:
+                moves_without_y_o_p.append(move)
+        new_moves = moves_without_y_o_p + year_of_plenty_applied_moves
+        # monopoly
+        monopoly_applied_moves = []
+        moves_without_monopoly = []
+        for move in new_moves:
+            monopoly_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.Monopoly]
+            if monopoly_cards_count != 0:
+                for resource in Resource:
+                    new_move = copy.deepcopy(move)
+                    new_move.monopoly_card = resource
+                    monopoly_applied_moves.append(new_move)
+            else:
+                moves_without_monopoly.append(move)
+        new_moves = moves_without_monopoly + monopoly_applied_moves
         return moves + new_moves
 
-    def _get_dev_card_exposure_moves_min_card_index(self, min_dev_card_index) -> List[List[DevelopmentCard]]:
+    def _get_dev_card_exposure_moves_min_card_index(self, min_dev_card_index) -> List[defaultdict]:
         if min_dev_card_index > LastDevCardIndex:
-            return [[]]
+            return [defaultdict(0)]
         player = self.get_current_player()
         unexposed = player.get_unexposed_development_cards()
         curr_card = DevelopmentCard(min_dev_card_index)
         if unexposed[curr_card] == 0:
             return self._get_dev_card_exposure_moves_min_card_index(min_dev_card_index + 1)
 
-        curr_card_expose_options = []
-        for i in range(unexposed[curr_card]):
-            curr_card_expose_options.append([curr_card for _ in range(i)])
-
         later_cards_expose_options = self._get_dev_card_exposure_moves_min_card_index(min_dev_card_index + 1)
         res = []
-        for curr_card_expose_option in curr_card_expose_options:
+        for i in range(unexposed[curr_card] + 1):
             for later_cards_expose_option in later_cards_expose_options:
-                res.append(curr_card_expose_option + later_cards_expose_option)
+                with_curr_card_option = copy.deepcopy(later_cards_expose_option)
+                with_curr_card_option[curr_card] = i
+                res.append(with_curr_card_option)
         return res
+
+    def _get_year_of_plenty_resource_options_min_resource_index(self, num_of_resources,
+                                                                min_resource_index=FirsResourceIndex):
+        if num_of_resources == 0:
+            return [{}]
+        if min_resource_index == LastResourceIndex:
+            return [{Resource(min_resource_index): num_of_resources}]
+        assert not min_resource_index > LastResourceIndex
+        later_resources_options_num_is = {}
+        for i in range(1, num_of_resources):
+            later_resources_options_num_is[i] = \
+                self._get_year_of_plenty_resource_options_min_resource_index(i, min_resource_index + 1)
+        options_with_curr_resource = []
+        for i in range(1, num_of_resources):
+            for later_resources_option in later_resources_options_num_is[i]:
+                later_resources_option[Resource(min_resource_index)] = num_of_resources - i
+                options_with_curr_resource.append(later_resources_option)
+        return options_with_curr_resource + \
+               self._get_year_of_plenty_resource_options_min_resource_index(num_of_resources,
+                                                                            min_resource_index + 1)
 
     def _get_all_possible_paths_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
@@ -434,9 +479,6 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved.append(path_nearby)
                     new_moves.append(new_move)
-            if (DevelopmentCard.RoadBuilding in move.development_cards_to_be_exposed) and \
-                    (len(move.paths_to_be_paved) < 2):  # applying side effect of dev card
-                moves.remove(move)
             self.revert_pretend_to_make_a_move(move)
 
         if not new_moves:  # End of recursion
@@ -444,7 +486,7 @@ class CatanState(AbstractState):
         players_road_building_dev_cards = player.unexposed_development_cards[DevelopmentCard.RoadBuilding]
         if players_road_building_dev_cards > 0:  # optimization
             moves_corresponding_to_dev_cards = [
-                x for x in moves if not ((DevelopmentCard.RoadBuilding in x.development_cards_to_be_exposed) and
+                x for x in moves if not ((x.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] != 0) and
                                          (len(x.paths_to_be_paved) < 2 * players_road_building_dev_cards))]
         else:
             moves_corresponding_to_dev_cards = moves
@@ -504,9 +546,11 @@ class CatanState(AbstractState):
         previous_robber_land_placement = self.board.get_robber_land()
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = previous_robber_land_placement
-        for card in move.development_cards_to_be_exposed:
-            self._apply_dev_card_side_effect(card)
-            player.expose_development_card(card)
+        road_dev_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding]
+        self._apply_road_building_dev_card_side_effect(road_dev_cards_count)
+        for dev_card_type in DevelopmentCard:
+            for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
+                player.expose_development_card(dev_card_type)
         for exchange in move.resources_exchanges:
             player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
         for path in move.paths_to_be_paved:
@@ -539,44 +583,26 @@ class CatanState(AbstractState):
             player.add_resources_and_piece_for_road()
         for exchange in move.resources_exchanges:
             player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
-        for card in move.development_cards_to_be_exposed:
-            self._revert_dev_card_side_effect(card)
-            player.un_expose_development_card(card)
+        for dev_card_type in DevelopmentCard:
+            for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
+                player.un_expose_development_card(dev_card_type)
+        road_dev_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding]
+        self._revert_dev_card_side_effect(road_dev_cards_count)
         robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
         player.update_resources(move.resources_updates, AbstractPlayer.remove_resource)
 
-    def _apply_dev_card_side_effect(self, card: DevelopmentCard):
+    def _apply_road_building_dev_card_side_effect(self, count: int):
         curr_player = self.get_current_player()
-        if card is DevelopmentCard.Knight:
-            # TODO Arye should implement
-            pass
-        elif card is DevelopmentCard.RoadBuilding:
-            # All the moves that expose the card and don't make 2 new roads are removed
-            curr_player.add_resource(Resource.Brick, 2)
-            curr_player.add_resource(Resource.Lumber, 2)
-        elif card is DevelopmentCard.Monopoly:
-            # TODO implement
-            pass
-        elif card is DevelopmentCard.YearOfPlenty:
-            # TODO implement
-            pass
+        # All the moves that expose the card and don't make 2 new roads are removed
+        curr_player.add_resource(Resource.Brick, count * 2)
+        curr_player.add_resource(Resource.Lumber, count * 2)
 
-    def _revert_dev_card_side_effect(self, card: DevelopmentCard):
+    def _revert_dev_card_side_effect(self, count: int):
         curr_player = self.get_current_player()
-        if card is DevelopmentCard.Knight:
-            # TODO Arye should implement
-            pass
-        elif card is DevelopmentCard.RoadBuilding:
-            curr_player.remove_resource(Resource.Brick, 2)
-            curr_player.remove_resource(Resource.Lumber, 2)
-        elif card is DevelopmentCard.Monopoly:
-            # TODO implement
-            pass
-        elif card is DevelopmentCard.YearOfPlenty:
-            # TODO implement
-            pass
+        curr_player.remove_resource(Resource.Brick, count * 2)
+        curr_player.remove_resource(Resource.Lumber, count * 2)
 
     initialisation_resources = ResourceAmounts().add_road().add_settlement()
 
@@ -608,7 +634,7 @@ class CatanState(AbstractState):
     def _add_roads_to_initialisation_moves(self, moves):
         moves = [move for move in self._get_all_possible_paths_moves(moves) if move not in moves]
         assert all([(len(move.resources_exchanges) == 0 and
-                     len(move.development_cards_to_be_exposed) == 0 and
+                     sum(move.development_cards_to_be_exposed.values()) == 0 and
                      len(move.paths_to_be_paved) == 1 and
                      len(move.locations_to_be_set_to_settlements) == 1 and
                      len(move.locations_to_be_set_to_cities) == 0 and
@@ -632,7 +658,7 @@ class CatanState(AbstractState):
         moves = self._get_all_possible_settlements_moves(moves)
         moves.remove(empty_move)
         assert all([(len(move.resources_exchanges) == 0 and
-                     len(move.development_cards_to_be_exposed) == 0 and
+                     sum(move.development_cards_to_be_exposed.values()) == 0 and
                      len(move.paths_to_be_paved) == 0 and
                      len(move.locations_to_be_set_to_settlements) == 1 and
                      len(move.locations_to_be_set_to_cities) == 0 and
