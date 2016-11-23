@@ -10,8 +10,6 @@ from train_and_test.logger import logger
 
 class AlphaBetaPlayer(AbstractPlayer):
     def __init__(self, seed=None, timeout_seconds=5):
-        assert seed is None or (isinstance(seed, int) and seed > 0)
-
         super().__init__(seed, timeout_seconds)
         self.expectimax_alpha_beta = AlphaBetaExpectimax(
             is_maximizing_player=lambda p: p is self,

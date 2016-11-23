@@ -9,15 +9,17 @@ from train_and_test import logger
 
 
 class AbstractPlayer(abc.ABC):
-    c = 1
+    c = 10
 
-    def __init__(self, seed: int=None, timeout_seconds=5):
-        assert seed is None or (isinstance(seed, int) and seed > 0)
-        assert timeout_seconds > 0
-
+    def __init__(self, seed=None, timeout_seconds=5):
+        if seed is not None and not (0 <= seed < 1):
+            # noinspection PyUnresolvedReferences
+            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
+                         ' was sent'.format(parameter_name=AbstractPlayer.__init__.__code__.co_varnames[1]))
+            seed = None
         AbstractPlayer.c += 1
-        seed = seed if seed is None else int(seed * AbstractPlayer.c)
-        self._random_choice = np.random.RandomState(seed).choice
+        numpy_seed = seed if seed is None else int(seed * AbstractPlayer.c)
+        self._random_choice = np.random.RandomState(seed=numpy_seed).choice
 
         self._timeout_seconds = timeout_seconds
         self.resources = {r: 0 for r in Resource}

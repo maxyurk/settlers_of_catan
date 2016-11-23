@@ -107,9 +107,13 @@ class RandomMove(AbstractMove):
 
 class CatanState(AbstractState):
     def __init__(self, players: List[AbstractPlayer], seed=None):
-        assert seed is None or (isinstance(seed, int) and seed > 0)
+        if seed is not None and not (0 <= seed < 1):
+            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
+                         ' was sent'.format(parameter_name=CatanState.__init__.__code__.co_varnames[2]))
+            seed = None
 
-        random_state = np.random.RandomState(seed)
+        numpy_seed = seed if seed is None else int(seed * 10)
+        random_state = np.random.RandomState(seed=numpy_seed)
         self._random_choice = random_state.choice
 
         self.players = players
