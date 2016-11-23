@@ -17,9 +17,9 @@ class AbstractState(abc.ABC):
 
     @abc.abstractmethod
     def get_next_moves(self):
-        """computes the next moves available from the current state
-        Returns:
-            List of AbstractMove: a list of the next moves
+        """
+        computes the next moves available from the current state
+        :return List of AbstractMove: a list of the next moves
         """
         return []
 
