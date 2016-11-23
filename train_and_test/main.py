@@ -15,28 +15,6 @@ def scores_changed(state, previous_scores, scores):
     return False
 
 
-def build_game(players, seed):
-    p1, p2 = players
-    state = CatanState([p1, p2], seed)
-    # state.board.set_location(p1, 0, Colony.Settlement)
-    # state.board.set_location(p1, 1, Colony.Settlement)
-    # state.board.set_location(p1, 14, Colony.Settlement)
-    # state.board.set_location(p1, 23, Colony.Settlement)
-    # state.board.set_path(p1, (0, 4), Road.Paved)
-    # state.board.set_path(p1, (4, 1), Road.Paved)
-    # state.board.set_path(p1, (14, 9), Road.Paved)
-    # state.board.set_path(p1, (23, 17), Road.Paved)
-    # state.board.set_location(p2, 52, Colony.Settlement)
-    # state.board.set_location(p2, 53, Colony.Settlement)
-    # state.board.set_location(p2, 22, Colony.Settlement)
-    # state.board.set_location(p2, 36, Colony.Settlement)
-    # state.board.set_path(p2, (52, 49), Road.Paved)
-    # state.board.set_path(p2, (49, 53), Road.Paved)
-    # state.board.set_path(p2, (22, 28), Road.Paved)
-    # state.board.set_path(p2, (36, 31), Road.Paved)
-    return state
-
-
 def clean_previous_images():
     for file_name in os.listdir(None):
         if file_name.split(sep='_')[0] == 'turn':
@@ -45,35 +23,37 @@ def clean_previous_images():
 
 def execute_game():
     seed = None  # 0.35 - this number, when used with alpha-beta players, produces a very slow game
-    p1 = AlphaBetaPlayer(3, seed)
-    # p2 = AlphaBetaPlayer(1, seed)
+    timeout_seconds = 5
+    p1 = AlphaBetaPlayer(seed, timeout_seconds)
+    # p2 = AlphaBetaPlayer(seed, timeout_seconds)
     # p1 = RandomPlayer(seed)
     p2 = RandomPlayer(seed)
-    state = build_game([p1, p2], seed)
+    state = CatanState([p1, p2], seed)
 
     clean_previous_images()
 
-    start_time = time.time()
-    c = 0
+    turn_count = 0
     previous_scores = state.get_scores_by_player()
-    logger.info('\np1 {}:p2 {} | turn: {} | game start'.format(previous_scores[p1], previous_scores[p2], c))
-    if __debug__:
-        state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, previous_scores[p1], previous_scores[p2]))
+    logger.info('| p1 {}:p2 {} | turn: {} | game start |'.format(previous_scores[p1], previous_scores[p2], turn_count))
+    state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(turn_count, previous_scores[p1], previous_scores[p2]))
     while not state.is_final():
-        c += 1
+        logger.info('-----------------{}\'s turn-----------------'
+                    .format('p1' if state.get_current_player() is p1 else 'p2'))
+        turn_count += 1
+        robber_placement = state.board.get_robber_land()
 
         state.throw_dice()
         # --------------------------------------
         # TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.error('\n~BUG throw dice changed score~')
+            logger.error('~BUG throw dice changed score~')
             exit(1)
         # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
         # TODO remove
         if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.error('\n~BUG choose move changed score~')
+            logger.error('~BUG choose move changed score~')
             exit(1)
         # --------------------------------------
         state.make_move(move)
@@ -84,16 +64,19 @@ def execute_game():
             previous_scores = current_scores
 
         if move.is_doing_anything():
-            logger.info('\np1 {}:p2 {} | turn: {} | time: {} | move:{}'
-                        .format(current_scores[p1], current_scores[p2], c, time.time() - start_time,
-                                {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates'}))
-            if __debug__:
-                state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(c, current_scores[p1], current_scores[p2]))
-        elif score_changed:
+            move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
+                         (k == 'robber_placement_land' and v == robber_placement)}
+            logger.info('| p1 {}:p2 {} | turn: {} | move:{} |'
+                        .format(current_scores[p1], current_scores[p2], turn_count, move_data))
+            state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(turn_count, current_scores[p1], current_scores[p2]))
+        elif __debug__ and score_changed:
             # TODO remove
-            logger.error('\np1 {}:p2 {} | turn: {} | BUG. score changed, without movement.'
-                         .format(current_scores[p1], current_scores[p2], c))
+            logger.error('~BUG. score changed, without movement | p1 {}:p2 {} | turn: {}'
+                         .format(current_scores[p1], current_scores[p2], turn_count))
             exit(1)
+        logger.info('-----------------{}\'s done-----------------'
+                    .format('p2' if state.get_current_player() is p1 else 'p1'))
+    logger.info('| p1 {}:p2 {} | turn: {} | game end |'.format(previous_scores[p1], previous_scores[p2], turn_count))
 
 
 def main():

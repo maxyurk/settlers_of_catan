@@ -56,8 +56,7 @@ class TestBoard(TestCase):
         self.assertEqual(len(self.b.get_all_settleable_locations()), 50)
 
     def test_get_settleable_locations_by_player(self):
-        locations = self.b.get_settleable_locations_by_player(self.player1)
-        self.assertListEqual(locations, [])
+        self.assertListEqual(self.b.get_settleable_locations_by_player(self.player1), [])
 
     def test_get_settleable_locations_by_player_when_game_begins(self):
         b = Board()
@@ -79,10 +78,6 @@ class TestBoard(TestCase):
         self.assertEqual(b.get_settleable_locations_by_player(p2),
                          [i for i in range(54) if i not in {0, 3, 4, 7, 11, 12}])
 
-
-
-
-
     def test_get_unpaved_paths_near_player(self):
         paths = self.b.get_unpaved_paths_near_player(self.player1)
         self.assertEqual(len(paths), 5)
@@ -92,12 +87,11 @@ class TestBoard(TestCase):
         self.assertIn((12, 17), paths)
 
     def test_get_settled_locations_by_player(self):
-        locations = self.b.get_settled_locations_by_player(self.player1)
-        self.assertListEqual(locations, [0, 7])
+        self.assertListEqual(self.b.get_settled_locations_by_player(self.player1), [0, 7])
 
     def test_get_surrounding_resources(self):
-        lands = self.b.get_surrounding_resources(30)
-        self.assertListEqual(lands, [self.b._lands[9], self.b._lands[10], self.b._lands[14]])
+        self.assertListEqual(self.b.get_surrounding_resources(30),
+                             [self.b._lands[9].resource, self.b._lands[10].resource, self.b._lands[14].resource])
 
     def test_get_colonies_score(self):
         self.assertEqual(self.b.get_colonies_score(self.player1), 2)

@@ -1,26 +1,27 @@
 import abc
+import numpy as np
 from typing import Dict
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.board import Resource
 from game.development_cards import DevelopmentCard
 from game.pieces import *
 from train_and_test import logger
-import numpy as np
 
 
 class AbstractPlayer(abc.ABC):
-    c = 0
+    c = 10
 
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, timeout_seconds=5):
         if seed is not None and not (0 <= seed < 1):
             # noinspection PyUnresolvedReferences
             logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
                          ' was sent'.format(parameter_name=AbstractPlayer.__init__.__code__.co_varnames[1]))
             seed = None
         AbstractPlayer.c += 1
-        numpy_seed = None if seed is None else int(seed * AbstractPlayer.c)
+        numpy_seed = seed if seed is None else int(seed * AbstractPlayer.c)
         self._random_choice = np.random.RandomState(seed=numpy_seed).choice
 
+        self._timeout_seconds = timeout_seconds
         self.resources = {r: 0 for r in Resource}
         self.pieces = {
             Colony.Settlement: 5,

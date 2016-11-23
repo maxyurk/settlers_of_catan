@@ -112,7 +112,7 @@ class CatanState(AbstractState):
                          ' was sent'.format(parameter_name=CatanState.__init__.__code__.co_varnames[2]))
             seed = None
 
-        numpy_seed = None if seed is None else int(seed * 10)
+        numpy_seed = seed if seed is None else int(seed * 10)
         random_state = np.random.RandomState(seed=numpy_seed)
         self._random_choice = random_state.choice
 
@@ -595,12 +595,19 @@ class CatanState(AbstractState):
         moves = self._add_roads_to_initialisation_moves(moves)
 
         # remove resources given to player now, and give it to him when the move will actually be made.
-        # that way there's no side-effect to this method, and 'revert' the move would be easy
+        # that way there's no side-effect to this method, and 'revert' the move would be easy.
+        # it also simplifies the way a user gets
+        is_second_initialisation_move = self.board.get_colonies_score(player) == 1
         player.update_resources(CatanState.initialisation_resources, AbstractPlayer.remove_resource)
         for move in moves:
             move.resources_updates = CatanState.initialisation_resources
+            if is_second_initialisation_move:
+                move.resources_updates = copy.deepcopy(move.resources_updates)
+                initial_resources = self.board.get_surrounding_resources(move.locations_to_be_set_to_settlements[0])
+                for resource in initial_resources:
+                    move.resources_updates[resource] += 1
 
-        return moves[0:2]
+        return moves
 
     def _add_roads_to_initialisation_moves(self, moves):
         moves = [move for move in self._get_all_possible_paths_moves(moves) if move not in moves]

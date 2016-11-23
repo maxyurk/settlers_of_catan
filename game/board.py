@@ -186,7 +186,7 @@ class Board:
             logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
                          ' was sent'.format(parameter_name=Board.__init__.__code__.co_varnames[1]))
             seed = None
-        numpy_seed = None if seed is None else int(seed * 10)
+        numpy_seed = seed if seed is None else int(seed * 10)
         self._shuffle = np.random.RandomState(numpy_seed).shuffle
         self._player_colonies_points = {}
         self._players_by_roads = {}
@@ -297,17 +297,14 @@ class Board:
                 for v in self._roads_and_colonies.neighbors(u)
                 if self.has_road_been_paved_by(None, (u, v))]
 
-    def get_surrounding_resources(self, location: Location) -> List[Land]:
+    def get_surrounding_resources(self, location: Location) -> List[Resource]:
         """
         get resources surrounding the settlement in this location
         :param location: the location to get the resources around
-        :return: list of lands, which are a tuple of (Resource, number, id)
-                    where Resource is the hexagon resource,
-                    number is the number on the specified hexagon,
-                    and the id is the number of the resource in the _lands array
+        :return: list of resources
         """
-
-        return self._roads_and_colonies.node[location][Board.lands]
+        return [land.resource for land in self._roads_and_colonies.node[location][Board.lands]
+                if land.resource is not None]
 
     def get_colonies_score(self, player) -> int:
         """
