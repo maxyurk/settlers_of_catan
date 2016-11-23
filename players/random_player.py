@@ -8,6 +8,7 @@ from math import ceil
 
 class RandomPlayer(AbstractPlayer):
     def __init__(self, seed=None):
+        assert seed is None or (isinstance(seed, int) and seed > 0)
         super().__init__(seed)
 
     def choose_move(self, state: AbstractState):

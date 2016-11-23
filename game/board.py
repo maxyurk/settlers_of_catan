@@ -177,17 +177,14 @@ class Board:
     lands = 'l'
     harbor = 'h'
 
-    def __init__(self, seed: int = None):
+    def __init__(self, seed: int=None):
         """
         Board of the game settlers of catan
         :param seed: optional parameter. send the same number in the range [0,1) to get the same map
         """
-        if seed is not None and not (0 <= seed < 1):
-            logger.error('{parameter_name} should be in the range [0,1). treated as if no {parameter_name}'
-                         ' was sent'.format(parameter_name=Board.__init__.__code__.co_varnames[1]))
-            seed = None
-        numpy_seed = seed if seed is None else int(seed * 10)
-        self._shuffle = np.random.RandomState(numpy_seed).shuffle
+        assert seed is None or (isinstance(seed, int) and seed > 0)
+
+        self._shuffle = np.random.RandomState(seed).shuffle
         self._player_colonies_points = {}
         self._players_by_roads = {}
 
@@ -340,43 +337,17 @@ class Board:
         # IDEA 1
         # ------
         # perhaps check only those with degree 1 + those that are in a cycle
+        # (a good idea, but the overhead of finding cycles may be not worth the while.
+        #  how to find vertices to check: maybe something like starting from vertices with degree 1 and climb all the
+        #  way to the rest of the graph, and stop each time there's a split (degree 2). edges the weren't visited are
+        #  in a cycle)
         # ------
-        # IDEA 2 - implemented
-        # ------
-        # something like:
-        # longest_in_graph = 0
-        # connect_components = sorted(graph.connect_components, by_number_of_edges_in_component)
-        # for each component in connected_component:
-        #     if len(component.get_edges()) <= longest_in_graph:
-        #         break
-        #     longest = 0
-        #     for each edge in component:
-        #         if longest == len(component.get_edges()):
-        #             break  # that's the best in this component
-        #         longest = max(longest, compute_longest(edge))
-        #     longest_in_graph = max(longest, longest_in_graph)
-        # ------
-        # IDEA 3
-        # ------
-        # maintain subgraphs to avoid the copy overhead
-        # (not possible because the sub-graph in networkx is induced from nodes, not edges
-        # could be implemented by removing edges and then putting them back.
-        # not sure it's better though)
-        # ------
-        # IDEA 4
+        # IDEA 2
         # ------
         # maintain roads paved by player lists to avoid repeated graph traversals
         # (this may be useful in other places in the code where edges are iterated)
         # ------
-        # IDEA 5
-        # ------
-        # for each component, check if DAG. if DAG, finds longest road
-        # ------
-        # IDEA 6
-        # ------
-        # use graph-tool library, that claims to have better performance
-        # ------
-        # IDEA 7
+        # IDEA 3
         # ------
         # we have only two connected components. perhaps just starting from both initial villages is enough,
         # and seraching for connected components is redundant. especially when there's only one
