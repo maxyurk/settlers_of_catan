@@ -3,7 +3,8 @@ from unittest import TestCase
 
 from algorithms.abstract_state import AbstractState
 from game.board import Resource
-from game.catan_state import CatanState, CatanMove
+from game.catan_state import CatanState
+from game.catan_moves import CatanMove
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
 from players.abstract_player import AbstractPlayer

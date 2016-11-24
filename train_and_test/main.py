@@ -32,7 +32,8 @@ def execute_game():
 
     turn_count = 0
     previous_scores = state.get_scores_by_player()
-    logger.info('| p1 {}:p2 {} | turn: {} | game start |'.format(previous_scores[p1], previous_scores[p2], turn_count))
+    logger.info('| p1 {}:p2 {} | turn: {} | game start | seed: {} | timeout: {} |'
+                .format(previous_scores[p1], previous_scores[p2], turn_count))
     state.board.plot_map('turn_{}_{}_to_{}.png'.format(turn_count, previous_scores[p1], previous_scores[p2]))
     while not state.is_final():
         logger.info('-----------------{}\'s turn-----------------'
@@ -63,7 +64,8 @@ def execute_game():
 
         if move.is_doing_anything():
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
-                         (k == 'robber_placement_land' and v == robber_placement)}
+                         (k == 'robber_placement_land' and v == robber_placement) and not
+                         (isinstance(v, dict) and sum(v.values()) == 0)}
             logger.info('| p1 {}:p2 {} | turn: {} | move:{} |'
                         .format(current_scores[p1], current_scores[p2], turn_count, move_data))
             state.board.plot_map('turn_{}_{}_to_{}.png'.format(turn_count, current_scores[p1], current_scores[p2]))
