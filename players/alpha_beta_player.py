@@ -4,7 +4,6 @@ from algorithms.abstract_state import AbstractState, AbstractMove
 from algorithms.alpha_beta_pruning_expectimax import AlphaBetaExpectimax
 from game.board import Resource
 from game.catan_state import CatanState
-from game.catan_moves import CatanMove
 from players.abstract_player import AbstractPlayer
 from players.random_player import RandomPlayer
 from train_and_test.logger import logger
@@ -28,7 +27,7 @@ class AlphaBetaPlayer(AbstractPlayer):
             best_move = move
             logger.info('starting depth {}'.format(depth))
             move = self.expectimax_alpha_beta.get_best_move(state, max_depth=depth)
-            depth += 1
+            depth += 2
         if best_move is not None:
             return best_move
         else:

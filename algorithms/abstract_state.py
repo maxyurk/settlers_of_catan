@@ -39,7 +39,7 @@ class AbstractState(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_numbers_to_probabilities(self):
+    def get_probabilities_by_dice_values(self):
         """returns a map of (items to send to throw_dice) -> (their probability)"""
         raise NotImplementedError()
 

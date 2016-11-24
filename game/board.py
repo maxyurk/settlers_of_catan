@@ -193,14 +193,6 @@ class Board:
         self._set_attributes()
         self._create_harbors()
 
-    def get_all_settleable_locations(self) -> List[Location]:
-        """
-        get non-colonised (empty vertices) locations on map
-        :return: list of locations on map that aren't colonised
-        """
-        return [v for v in self._roads_and_colonies.nodes()
-                if not self.is_colonised(v)]
-
     def get_settleable_locations_by_player(self, player) -> List[Location]:
         """
         get non-colonised (empty vertices) locations on map that this player can settle
@@ -256,7 +248,7 @@ class Board:
     def get_settlements_by_player(self, player) -> List[Location]:
         """
         get player's settlements on map that this player can settle with a city
-        unlike get_settled_locations_by_player, this method returns only the
+        unlike get_locations_colonised_by_player, this method returns only the
         settlements' locations. It doesn't return cities locations
         :param player: the player to get settlements
         :return: list of locations on map that the player can settle a city on
@@ -264,7 +256,7 @@ class Board:
         return [v for v in self._roads_and_colonies.nodes()
                 if self._roads_and_colonies.node[v][Board.player] == (player, Colony.Settlement)]
 
-    def get_settled_locations_by_player(self, player) -> List[Location]:
+    def get_locations_colonised_by_player(self, player) -> List[Location]:
         """
         get the colonies owned by given player
         unlike get_settlements_by_player, this method returns both the
@@ -273,6 +265,14 @@ class Board:
         :return: list of locations that have colonies of the given player
         """
         return [v for v in self._roads_and_colonies.nodes() if self.is_colonised_by(player, v)]
+
+    def get_roads_paved_by_player(self, player):
+        """
+        get all the roads the player paved
+        :param player: player of which the paths
+        :return: List[Path]
+        """
+        return [e for e in self._roads_and_colonies.edges() if self.has_road_been_paved_by(player, e)]
 
     def get_unpaved_paths_near_player(self, player) -> List[Path]:
         """
@@ -301,6 +301,24 @@ class Board:
         :return: list of resources
         """
         return [land.resource for land in self._roads_and_colonies.node[location][Board.lands]
+                if land.resource is not None]
+
+    def get_surrounding_dice_values(self, location: Location) -> List[int]:
+        """
+        get numbers surrounding the settlement in this location
+        :param location: the location to get the numbers around
+        :return: list of numbers
+        """
+        return [land.dice_value for land in self._roads_and_colonies.node[location][Board.lands]
+                if land.resource is not None]
+
+    def get_adjacent_to_path_dice_values(self, path: Path):
+        """
+        get numbers adjacent to this path
+        :param path: the path to get the numbers around
+        :return: list of numbers
+        """
+        return [land.dice_value for land in self._roads_and_colonies[path[0]][path[1]][Board.lands]
                 if land.resource is not None]
 
     def get_colonies_score(self, player) -> int:
@@ -552,10 +570,8 @@ class Board:
         my_board.get_paths_by_players()[None] == all the unpaved paths
         :return: Dict[Player, List[Location]]
         """
-        edges_by_players = {
-            player: [e for e in self._roads_and_colonies.edges() if self.has_road_been_paved_by(player, e)]
-            for player in self._player_colonies_points.keys()
-            }
+        edges_by_players = {player: self.get_roads_paved_by_player(player)
+                            for player in self._player_colonies_points.keys()}
         edges_by_players[None] = [e for e in self._roads_and_colonies.edges()
                                   if self.has_road_been_paved_by(None, e)]
         return edges_by_players

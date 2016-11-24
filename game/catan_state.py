@@ -121,7 +121,7 @@ class CatanState(AbstractState):
         numbers_to_probabilities[14 - i] = p / 36
     numbers_to_probabilities[7] = 6 / 36
 
-    def get_numbers_to_probabilities(self):
+    def get_probabilities_by_dice_values(self):
         return CatanState.numbers_to_probabilities
 
     def pop_development_card(self) -> DevelopmentCard:

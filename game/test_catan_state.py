@@ -191,14 +191,14 @@ class TestCatanState(TestCase):
         # TODO finish this test when all dev-cards are implemented properly
 
     def test_make_move(self):
-        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])
+        self.assertListEqual(self.state.board.get_locations_colonised_by_player(self.players[0]), [])
 
         self.players[0].add_resources_and_piece_for_settlement()
         move = CatanMove()
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
-        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [0])
+        self.assertListEqual(self.state.board.get_locations_colonised_by_player(self.players[0]), [0])
 
     def test_unmake_move(self):
         self.players[0].add_resources_and_piece_for_settlement()
@@ -206,7 +206,7 @@ class TestCatanState(TestCase):
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
-        self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [0])
+        self.assertListEqual(self.state.board.get_locations_colonised_by_player(self.players[0]), [0])
 
         self.state.unmake_move(move)
 

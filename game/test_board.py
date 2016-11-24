@@ -52,8 +52,6 @@ class TestBoard(TestCase):
         self.assertEqual(len(self.b._roads_and_colonies.nodes()), 54)
         self.assertEqual(len(self.b._lands), 19)
 
-    def test_get_all_settleable_locations(self):
-        self.assertEqual(len(self.b.get_all_settleable_locations()), 50)
 
     def test_get_settleable_locations_by_player(self):
         self.assertListEqual(self.b.get_settleable_locations_by_player(self.player1), [])
@@ -87,7 +85,7 @@ class TestBoard(TestCase):
         self.assertIn((12, 17), paths)
 
     def test_get_settled_locations_by_player(self):
-        self.assertListEqual(self.b.get_settled_locations_by_player(self.player1), [0, 7])
+        self.assertListEqual(self.b.get_locations_colonised_by_player(self.player1), [0, 7])
 
     def test_get_surrounding_resources(self):
         self.assertListEqual(self.b.get_surrounding_resources(30),

@@ -14,17 +14,32 @@ def scores_changed(state, previous_scores, scores):
 
 
 def clean_previous_images():
-    for file_name in os.listdir(None):
+    for file_name in os.listdir():
         if file_name.split(sep='_')[0] == 'turn':
             os.remove(file_name)
 
 
 def execute_game():
-    seed = None  # 0.35 - this number, when used with alpha-beta players, produces a very slow game
-    timeout_seconds = 1
+    seed = None
+    timeout_seconds = 5
+
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
-    # p2 = AlphaBetaPlayer(seed, timeout_seconds)
-    # p1 = RandomPlayer(seed)
+
+    def h(s: CatanState):
+        score = 0
+        locations = s.board.get_locations_colonised_by_player(p1)
+        for location in locations:
+            factor = s.board.get_colony_type_at_location(location).value
+            for dice_value in s.board.get_surrounding_dice_values(location):
+                score += s.get_probabilities_by_dice_values()[dice_value] * factor
+        roads = s.board.get_roads_paved_by_player(p1)
+        for road in roads:
+            factor = 0.5
+            for dice_value in s.board.get_adjacent_to_path_dice_values(road):
+                score += s.get_probabilities_by_dice_values()[dice_value] * factor
+        return score
+
+    p1.set_heuristic(h)
     p2 = RandomPlayer(seed)
     state = CatanState([p1, p2], seed)
 

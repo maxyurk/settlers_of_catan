@@ -66,7 +66,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         if is_random_event:
             v = 0
 
-            for number, probability in self.state.get_numbers_to_probabilities().items():
+            for number, probability in self.state.get_probabilities_by_dice_values().items():
                 random_move = self.state.throw_dice(number)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, False)
                 v += probability * u
