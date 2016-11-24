@@ -1,17 +1,20 @@
 import math
-from typing import Callable
+from typing import Callable, List
 
-from algorithms.abstract_state import AbstractState
+from algorithms.abstract_state import AbstractState, AbstractMove
 from algorithms.timeoutable_algorithm import TimeoutableAlgorithm
-from game.abstract_player import AbstractPlayer
+from players.abstract_player import AbstractPlayer
 
 
 class AlphaBetaExpectimax(TimeoutableAlgorithm):
     def __init__(self, is_maximizing_player: Callable[[AbstractPlayer], bool],
-                 evaluate_heuristic_value: Callable[[AbstractState], int], timeout_seconds=5):
+                 evaluate_heuristic_value: Callable[[AbstractState], float],
+                 timeout_seconds=5,
+                 filter_moves: Callable[[List[AbstractMove]], List[AbstractMove]]=lambda l: l):
         """
         wrapper of the expectiamx with alpha-beta pruning algorithm
         it inherits from TimeoutableAlgorithm to enable iterative deepening
+        :param filter_moves: filter of next moves. useful for several applications
         :param is_maximizing_player: a function that returns True if specified
         player is the maximizing player, False otherwise
         It should be something like:
@@ -21,10 +24,11 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         :return: best move
         """
         super().__init__(timeout_seconds)
+        self.filter_moves = filter_moves
         self.state = None
         self.max_depth = 0
         self._is_maximizing_player = is_maximizing_player
-        self._evaluate_heuristic_value = evaluate_heuristic_value
+        self.evaluate_heuristic_value = evaluate_heuristic_value
 
     def get_best_move(self, state, max_depth):
         """
@@ -57,7 +61,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
             return 0, None
 
         if depth == 0 or self.state.is_final():
-            return self._evaluate_heuristic_value(self.state), None
+            return self.evaluate_heuristic_value(self.state), None
 
         if is_random_event:
             v = 0
@@ -71,7 +75,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         elif self._is_maximizing_player(self.state.get_current_player()):
             v = -math.inf
             best_move = None
-            for move in self.state.get_next_moves():
+            for move in self.filter_moves(self.state.get_next_moves()):
                 self.state.make_move(move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
                 if u > v:
@@ -85,7 +89,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
             return v, best_move
         else:
             v = math.inf
-            for move in self.state.get_next_moves():
+            for move in self.filter_moves(self.state.get_next_moves()):
                 self.state.make_move(move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
                 v = min(v, u)
