@@ -36,7 +36,6 @@ class FakePlayer(AbstractPlayer):
 
 
 class TestCatanState(TestCase):
-
     def setUp(self):
         super().setUp()
         self.players = [FakePlayer(i) for i in range(2)]
@@ -154,6 +153,42 @@ class TestCatanState(TestCase):
             else:
                 self.assertEqual(robber_placement, move.robber_placement_land)
 
+    def test_on_road_building_exposure_player_paves_two_roads(self):
+        # given this board
+        player = self.players[0]
+        self.state.board.set_location(player, 0, Colony.Settlement)
+        self.state.board.set_location(player, 7, Colony.Settlement)
+        self.state.board.set_path(player, (3, 0), Road.Paved)
+        self.state.board.set_path(player, (3, 7), Road.Paved)
+        # and player has road-building card
+        player.add_unexposed_development_card(DevelopmentCard.RoadBuilding)
+
+        # get all moves
+        moves = self.state.get_next_moves()
+
+        # remove the empty move
+        moves = list(filter(CatanMove.is_doing_anything, moves))
+
+        # assert moves expose the development-card, and pave two roads
+        do_moves_expose_card = (m.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] == 1 for m in moves)
+        self.assertTrue(all(do_moves_expose_card))
+
+        do_moves_pave_two_roads = (len(m.paths_to_be_paved) == 2 for m in moves)
+        self.assertTrue(all(do_moves_pave_two_roads))
+
+    def test_on_monopoly_exposed_players_give_resource(self):
+        # given player 0 has monopoly dev-card, and player 1 has 1 of each resource
+        self.players[0].add_unexposed_development_card(DevelopmentCard.Monopoly)
+        for resource in Resource:
+            self.players[1].add_resource(resource)
+
+        # get all moves
+        moves = self.state.get_next_moves()
+
+        # remove the empty move
+        moves = list(filter(CatanMove.is_doing_anything, moves))
+        # TODO finish this test when all dev-cards are implemented properly
+
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])
 
@@ -210,4 +245,3 @@ class TestCatanState(TestCase):
         self.state.unthrow_dice(move)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
-

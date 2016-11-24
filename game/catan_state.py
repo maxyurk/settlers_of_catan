@@ -437,7 +437,7 @@ class CatanState(AbstractState):
 
     def _get_dev_card_exposure_moves_min_card_index(self, min_dev_card_index) -> List[defaultdict]:
         if min_dev_card_index > LastDevCardIndex:
-            return [defaultdict(0)]
+            return [defaultdict(int)]
         player = self.get_current_player()
         unexposed = player.get_unexposed_development_cards()
         curr_card = DevelopmentCard(min_dev_card_index)
