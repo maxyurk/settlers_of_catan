@@ -1,14 +1,14 @@
 import enum
-import networkx
-import numpy as np
-import matplotlib.pyplot
 from collections import namedtuple
 from itertools import chain
 from operator import itemgetter
 from typing import List, Tuple, Set, Dict
+
+import networkx
+import numpy as np
+
 from algorithms.tree_diameter import tree_diameter
 from game.pieces import Colony, Road
-from train_and_test.logger import logger
 
 """
 Structure
@@ -164,7 +164,7 @@ class Land(namedtuple('LandTuple', ['resource', 'dice_value', 'identifier', 'loc
      -Locations list (the locations around it)
      -all adjacent colonies
     """
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memo_dict=None):
         return self
 
 
@@ -487,7 +487,7 @@ class Board:
         """
         return self._players_by_roads[path_key(path)] is player
 
-    def plot_map(self, file_name='tmp.jpg'):
+    def plot_map(self, file_name='tmp.png'):
         vertices_by_players = self.get_locations_by_players()
         edges_by_players = self.get_paths_by_players()
 
@@ -585,7 +585,7 @@ class Board:
                 return True
         return False
 
-    def get_lands_to_place_robber_on(self) -> Set[Land]:
+    def get_lands_to_place_robber_on(self) -> List[Land]:
         return [land for land in self._lands
                 if land.identifier != self._robber_land.identifier
                 and (len(land.colonies) != 0 or land.resource is None)]
@@ -652,7 +652,7 @@ class Board:
         edges = self._get_harbors_edges()
 
         self._locations_by_harbors = {harbor: list(edge) for harbor, edge in zip(harbors, edges[0:len(harbors)])}
-        self._locations_by_harbors[Harbor.HarborGeneric] = list(chain(*edges[len(harbors):len(edges)]))
+        self._locations_by_harbors[Harbor.HarborGeneric] = list(chain(*edges[len(harbors):]))
 
     def _get_harbors_edges(self):
         wrapping_edges = self._get_wrapping_edges()

@@ -1,9 +1,10 @@
 from collections import Counter
-from typing import Dict
-from algorithms.abstract_state import AbstractState
-from game.abstract_player import AbstractPlayer
-from game.board import Resource
 from math import ceil
+from typing import Dict
+
+from algorithms.abstract_state import AbstractState
+from game.board import Resource
+from players.abstract_player import AbstractPlayer
 
 
 class RandomPlayer(AbstractPlayer):

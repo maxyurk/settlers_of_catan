@@ -1,11 +1,12 @@
 import abc
-import numpy as np
 from typing import Dict
+
+import numpy as np
+
 from algorithms.abstract_state import AbstractState, AbstractMove
 from game.board import Resource
 from game.development_cards import DevelopmentCard
 from game.pieces import *
-from train_and_test import logger
 
 
 class AbstractPlayer(abc.ABC):

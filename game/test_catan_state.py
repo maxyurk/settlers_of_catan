@@ -1,11 +1,12 @@
-from unittest import TestCase
 from math import ceil
+from unittest import TestCase
+
 from algorithms.abstract_state import AbstractState
-from game.abstract_player import AbstractPlayer
 from game.board import Resource
 from game.catan_state import CatanState, CatanMove
-from game.pieces import Colony, Road
 from game.development_cards import DevelopmentCard
+from game.pieces import Colony, Road
+from players.abstract_player import AbstractPlayer
 
 
 class FakePlayer(AbstractPlayer):
@@ -60,7 +61,7 @@ class TestCatanState(TestCase):
         moves = self.state.get_next_moves()
         self.assertEqual(len(moves), 1)
         move = moves[0]
-        self.assertListEqual(move.development_cards_to_be_exposed, [])
+        self.assertEqual(sum(move.development_cards_to_be_exposed.values()), 0)
         self.assertListEqual(move.paths_to_be_paved, [])
         self.assertListEqual(move.locations_to_be_set_to_settlements, [])
         self.assertListEqual(move.locations_to_be_set_to_cities, [])
@@ -75,7 +76,7 @@ class TestCatanState(TestCase):
         expected_possible_roads = {(0, 4), (7, 11), (7, 12)}
         actual_possible_roads = set()
         for move in moves:
-            self.assertListEqual(move.development_cards_to_be_exposed, [])
+            self.assertEqual(sum(move.development_cards_to_be_exposed.values()), 0)
             self.assertListEqual(move.locations_to_be_set_to_settlements, [])
             self.assertListEqual(move.locations_to_be_set_to_cities, [])
             self.assertEqual(move.development_cards_to_be_purchased_count, 0)
@@ -136,7 +137,7 @@ class TestCatanState(TestCase):
 
             # expose the knight card
             move = CatanMove()
-            move.development_cards_to_be_exposed = [DevelopmentCard.Knight]
+            move.development_cards_to_be_exposed[DevelopmentCard.Knight] += 1
             self.state.make_move(move)
 
         player, threshold = self.state._get_largest_army_player_and_size()
@@ -148,8 +149,10 @@ class TestCatanState(TestCase):
         self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
 
         for move in self.state.get_next_moves():
-            if DevelopmentCard.Knight in move.development_cards_to_be_exposed:
+            if move.development_cards_to_be_exposed[DevelopmentCard.Knight] != 0:
                 self.assertNotEqual(robber_placement, move.robber_placement_land)
+            else:
+                self.assertEqual(robber_placement, move.robber_placement_land)
 
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_settled_locations_by_player(self.players[0]), [])

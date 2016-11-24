@@ -1,8 +1,6 @@
-import logging
 import os
-import time
+
 from game.catan_state import CatanState
-from game.pieces import Colony, Road
 from players.alpha_beta_player import AlphaBetaPlayer
 from players.random_player import RandomPlayer
 from train_and_test.logger import logger
@@ -23,7 +21,7 @@ def clean_previous_images():
 
 def execute_game():
     seed = None  # 0.35 - this number, when used with alpha-beta players, produces a very slow game
-    timeout_seconds = 5
+    timeout_seconds = 1
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
     # p2 = AlphaBetaPlayer(seed, timeout_seconds)
     # p1 = RandomPlayer(seed)
@@ -35,7 +33,7 @@ def execute_game():
     turn_count = 0
     previous_scores = state.get_scores_by_player()
     logger.info('| p1 {}:p2 {} | turn: {} | game start |'.format(previous_scores[p1], previous_scores[p2], turn_count))
-    state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(turn_count, previous_scores[p1], previous_scores[p2]))
+    state.board.plot_map('turn_{}_{}_to_{}.png'.format(turn_count, previous_scores[p1], previous_scores[p2]))
     while not state.is_final():
         logger.info('-----------------{}\'s turn-----------------'
                     .format('p1' if state.get_current_player() is p1 else 'p2'))
@@ -68,7 +66,7 @@ def execute_game():
                          (k == 'robber_placement_land' and v == robber_placement)}
             logger.info('| p1 {}:p2 {} | turn: {} | move:{} |'
                         .format(current_scores[p1], current_scores[p2], turn_count, move_data))
-            state.board.plot_map('turn_{}_{}_to_{}.jpg'.format(turn_count, current_scores[p1], current_scores[p2]))
+            state.board.plot_map('turn_{}_{}_to_{}.png'.format(turn_count, current_scores[p1], current_scores[p2]))
         elif __debug__ and score_changed:
             # TODO remove
             logger.error('~BUG. score changed, without movement | p1 {}:p2 {} | turn: {}'

@@ -1,9 +1,9 @@
 from typing import Dict
 
 from algorithms.abstract_state import AbstractState, AbstractMove
-from game.abstract_player import AbstractPlayer
 from algorithms.monte_carlo import MonteCarlo
 from game.board import Resource
+from players.abstract_player import AbstractPlayer
 from players.random_player import RandomPlayer
 
 

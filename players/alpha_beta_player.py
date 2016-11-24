@@ -1,9 +1,9 @@
 from typing import Dict
-from algorithms.abstract_state import AbstractState
-from game.abstract_player import AbstractPlayer
+
 from algorithms.alpha_beta_pruning_expectimax import AlphaBetaExpectimax
 from game.board import Resource
 from game.catan_state import CatanState
+from players.abstract_player import AbstractPlayer
 from players.random_player import RandomPlayer
 from train_and_test.logger import logger
 

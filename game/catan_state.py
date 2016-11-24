@@ -1,13 +1,15 @@
 import copy
-from collections import namedtuple, defaultdict
-from typing import List, Tuple, Dict
-from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts
-from game.pieces import Colony, Road
-from algorithms.abstract_state import AbstractState, AbstractMove
-from game.abstract_player import AbstractPlayer
-from game.development_cards import DevelopmentCard, LastDevCardIndex, FirstDevCardIndex
-from train_and_test import logger
+from collections import defaultdict
+from collections import namedtuple
+from typing import List, Tuple
+
 import numpy as np
+
+from algorithms.abstract_state import AbstractState, AbstractMove
+from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts
+from game.development_cards import DevelopmentCard, LastDevCardIndex, FirstDevCardIndex
+from game.pieces import Colony, Road
+from players.abstract_player import AbstractPlayer
 
 ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_resource', 'count'])
 
@@ -312,11 +314,13 @@ class CatanState(AbstractState):
 
         no_dev_card_side_effect_trades = []
         for source_resource in Resource:
-            for i in range(int(player.get_resource_count(source_resource) / self._calc_curr_player_trade_ratio(
-                    source_resource))):
-                no_dev_card_side_effect_trades = no_dev_card_side_effect_trades + \
-                                                 self._trades_permutations_i_cards_min_resource_index(
-                                                     i, source_resource, FirsResourceIndex)
+
+            possible_trades_count = (int(player.get_resource_count(source_resource) /
+                                         self._calc_curr_player_trade_ratio(source_resource)))
+            for i in range(possible_trades_count):
+                no_dev_card_side_effect_trades = (
+                    no_dev_card_side_effect_trades +
+                    self._trades_permutations_i_cards_min_resource_index(i, source_resource, FirsResourceIndex))
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
@@ -486,8 +490,10 @@ class CatanState(AbstractState):
         players_road_building_dev_cards = player.unexposed_development_cards[DevelopmentCard.RoadBuilding]
         if players_road_building_dev_cards > 0:  # optimization
             moves_corresponding_to_dev_cards = [
-                x for x in moves if not ((x.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] != 0) and
-                                         (len(x.paths_to_be_paved) < 2 * players_road_building_dev_cards))]
+                move for move in moves
+                if not ((move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] != 0) and
+                        (len(move.paths_to_be_paved) < 2 * players_road_building_dev_cards))
+                ]
         else:
             moves_corresponding_to_dev_cards = moves
         return moves_corresponding_to_dev_cards + self._get_all_possible_paths_moves(new_moves)
