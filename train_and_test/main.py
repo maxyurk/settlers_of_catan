@@ -32,7 +32,7 @@ def execute_game():
 
     turn_count = 0
     previous_scores = state.get_scores_by_player()
-    logger.info('| p1 {}:p2 {} | turn: {} | game start | seed: {} | timeout: {} |'
+    logger.info('| p1 {}:p2 {} | turn: {} | game start |'
                 .format(previous_scores[p1], previous_scores[p2], turn_count))
     state.board.plot_map('turn_{}_{}_to_{}.png'.format(turn_count, previous_scores[p1], previous_scores[p2]))
     while not state.is_final():

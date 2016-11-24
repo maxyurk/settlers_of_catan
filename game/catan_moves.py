@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from algorithms.abstract_state import AbstractMove
-from game.catan_state import CatanState
 from players.abstract_player import AbstractPlayer
 
 
@@ -37,7 +36,6 @@ class CatanMove(AbstractMove):
         :param state: the state to apply the moves on
         :return: None
         """
-        assert isinstance(state, CatanState)
 
         # this does almost everything, the rest is done in this method
         state.pretend_to_make_a_move(self)
@@ -48,7 +46,6 @@ class CatanMove(AbstractMove):
         :param state: the state to revert the moves on
         :return: None
         """
-        assert isinstance(state, CatanState)
 
         # this does almost everything, the rest is done in this method
         state.revert_pretend_to_make_a_move(self)
