@@ -255,10 +255,10 @@ class AbstractPlayer(abc.ABC):
         self.add_resource(Resource.Wool)
         self.add_resource(Resource.Grain)
 
-    def trade_resources(self, source_resource: Resource, target_resource: Resource, ratio: int):
-        self.remove_resource(source_resource, ratio)
-        self.add_resource(target_resource)
+    def trade_resources(self, source_resource: Resource, target_resource: Resource, count: int, ratio: int):
+        self.remove_resource(source_resource, count * ratio)
+        self.add_resource(target_resource, count)
 
-    def un_trade_resources(self, source_resource: Resource, target_resource: Resource, ratio: int):
-        self.add_resource(source_resource, ratio)
-        self.remove_resource(target_resource)
+    def un_trade_resources(self, source_resource: Resource, target_resource: Resource, count: int, ratio: int):
+        self.add_resource(source_resource, count * ratio)
+        self.remove_resource(target_resource, count)

@@ -481,7 +481,6 @@ class CatanState(AbstractState):
         return moves + self._get_all_possible_development_cards_purchase_moves(new_moves)
 
     def pretend_to_make_a_move(self, move: CatanMove):
-        # TODO add resource exchange mechanism
         if move.robber_placement_land is None:
             move.robber_placement_land = self.board.get_robber_land()
         player = self.get_current_player()
@@ -495,7 +494,8 @@ class CatanState(AbstractState):
             for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
                 player.expose_development_card(dev_card_type)
         for exchange in move.resources_exchanges:
-            player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
+            player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count,
+                                   self._calc_curr_player_trade_ratio(exchange.source_resource))
         for path in move.paths_to_be_paved:
             self.board.set_path(player, path, Road.Paved)
             player.remove_resources_and_piece_for_road()
@@ -506,14 +506,17 @@ class CatanState(AbstractState):
             self.board.set_location(player, loc2, Colony.City)
             player.remove_resources_and_piece_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
-            # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
+            """ TODO add cards purchases to expectimax - same as dice throw
+                (need to inc/dec the counter of unexposed dev cards)
+                change the expectimax call from move.apply to pretend_to_make_a_move
+                revert the cards purchases in expectimax - same as dice throw
+                (need to inc/dec the counter of unexposed dev cards)
+            """
             player.remove_resources_for_development_card()
 
     def revert_pretend_to_make_a_move(self, move: CatanMove):
-        # TODO add resource exchange mechanism
         player = self.get_current_player()
         for count in range(0, move.development_cards_to_be_purchased_count):
-            # TODO add purchase card mechanism here. should apply : player.add_unexposed_development_card(zzzzzz)
             player.add_resources_for_development_card()
         for loc2 in move.locations_to_be_set_to_cities:
             self.board.set_location(player, loc2, Colony.Settlement)
@@ -525,24 +528,30 @@ class CatanState(AbstractState):
             self.board.set_path(player, path, Road.Unpaved)
             player.add_resources_and_piece_for_road()
         for exchange in move.resources_exchanges:
-            player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count)
+            player.un_trade_resources(exchange.source_resource, exchange.target_resource, exchange.count,
+                                      self._calc_curr_player_trade_ratio(exchange.source_resource))
         for dev_card_type in DevelopmentCard:
             for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
                 player.un_expose_development_card(dev_card_type)
         road_dev_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding]
-        self._revert_dev_card_side_effect(road_dev_cards_count)
+        self._revert_road_building_dev_card_side_effect(road_dev_cards_count)
         robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
         player.update_resources(move.resources_updates, AbstractPlayer.remove_resource)
 
     def _apply_road_building_dev_card_side_effect(self, count: int):
+        """
+        This method will add the resources needed for (count*2) roads. all moves that include exposing
+        road building dev card and don't pave (count*2) roads will be considered as illegal moves.
+        :param count: num of road building dev cards to be exposed
+        """
         curr_player = self.get_current_player()
-        # All the moves that expose the card and don't make 2 new roads are removed
+        # All the moves that expose the card and don't make count * 2 new roads are removed
         curr_player.add_resource(Resource.Brick, count * 2)
         curr_player.add_resource(Resource.Lumber, count * 2)
 
-    def _revert_dev_card_side_effect(self, count: int):
+    def _revert_road_building_dev_card_side_effect(self, count: int):
         curr_player = self.get_current_player()
         curr_player.remove_resource(Resource.Brick, count * 2)
         curr_player.remove_resource(Resource.Lumber, count * 2)
