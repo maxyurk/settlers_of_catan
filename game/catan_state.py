@@ -204,6 +204,11 @@ class CatanState(AbstractState):
         return self._player_with_largest_army[-1]
 
     def _calc_curr_player_trade_ratio(self, source_resource: Resource):
+        """
+        return 2, 3 or 4 based on the current players harbors status
+        :param source_resource: the resource the player will give
+        :return: 2, 3 or 4 - the number of resource units the player will give for a single card
+        """
         curr_player = self.get_current_player()
         if self.board.is_player_on_harbor(curr_player, Harbor(source_resource.value)):
             return 2
@@ -228,7 +233,7 @@ class CatanState(AbstractState):
             for i in range(possible_trades_count):
                 no_dev_card_side_effect_trades = (
                     no_dev_card_side_effect_trades +
-                    self._trades_permutations_i_cards_min_resource_index(i, source_resource, FirsResourceIndex))
+                    self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, FirsResourceIndex))
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
@@ -238,8 +243,8 @@ class CatanState(AbstractState):
                 for source_resource in Resource:
                     for i in range(int(player.get_resource_count(source_resource) /
                                                self._calc_curr_player_trade_ratio(source_resource))):
-                        for trades in self._trades_permutations_i_cards_min_resource_index(i, source_resource,
-                                                                                           FirsResourceIndex):
+                        for trades in self._trade_options_with_i_trades_and_min_resource_index(i, source_resource,
+                                                                                               FirsResourceIndex):
                             new_move = copy.deepcopy(move)
                             new_move.resources_exchanges = trades
                             new_moves.append(new_move)
@@ -252,7 +257,7 @@ class CatanState(AbstractState):
 
         return moves + new_moves
 
-    def _trades_permutations_i_cards_min_resource_index(self, i, source_resource, min_resource_index) \
+    def _trade_options_with_i_trades_and_min_resource_index(self, i, source_resource, min_resource_index) \
             -> List[List[ResourceExchange]]:
         """
         Returns all possible trade combinations when making i trades
@@ -267,7 +272,7 @@ class CatanState(AbstractState):
         if i == 0:
             return []
         if min_resource_index == source_resource.value:
-            return self._trades_permutations_i_cards_min_resource_index(i, source_resource, min_resource_index + 1)
+            return self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, min_resource_index + 1)
         if min_resource_index == LastResourceIndex or \
                 (min_resource_index == LastResourceIndex - 1 and source_resource.value == LastResourceIndex):
             trade = ResourceExchange(source_resource=source_resource,
@@ -277,9 +282,9 @@ class CatanState(AbstractState):
 
         trades = []
         for min_resource_trade_count in range(i):
-            partial_trades = self._trades_permutations_i_cards_min_resource_index(i - min_resource_trade_count,
-                                                                                  source_resource,
-                                                                                  min_resource_index + 1)
+            partial_trades = self._trade_options_with_i_trades_and_min_resource_index(i - min_resource_trade_count,
+                                                                                      source_resource,
+                                                                                      min_resource_index + 1)
             for partial_trade in partial_trades:
                 partial_trade.append(ResourceExchange(source_resource=source_resource,
                                                       target_resource=Resource(min_resource_index),
@@ -297,7 +302,7 @@ class CatanState(AbstractState):
         new_moves = []
         if not player.has_unexposed_development_card():
             return moves
-        expose_options = self._get_dev_card_exposure_moves_min_card_index(FirstDevCardIndex)
+        expose_options = self._get_dev_card_exposure_options_min_card_index(FirstDevCardIndex)
         for move in moves:
             for expose_option in expose_options:
                 new_move = copy.deepcopy(move)
@@ -343,16 +348,16 @@ class CatanState(AbstractState):
         new_moves = moves_without_monopoly + monopoly_applied_moves
         return moves + new_moves
 
-    def _get_dev_card_exposure_moves_min_card_index(self, min_dev_card_index) -> List[defaultdict]:
+    def _get_dev_card_exposure_options_min_card_index(self, min_dev_card_index) -> List[defaultdict]:
         if min_dev_card_index > LastDevCardIndex:
             return [defaultdict(int)]
         player = self.get_current_player()
         unexposed = player.get_unexposed_development_cards()
         curr_card = DevelopmentCard(min_dev_card_index)
         if unexposed[curr_card] == 0:
-            return self._get_dev_card_exposure_moves_min_card_index(min_dev_card_index + 1)
+            return self._get_dev_card_exposure_options_min_card_index(min_dev_card_index + 1)
 
-        later_cards_expose_options = self._get_dev_card_exposure_moves_min_card_index(min_dev_card_index + 1)
+        later_cards_expose_options = self._get_dev_card_exposure_options_min_card_index(min_dev_card_index + 1)
         res = []
         for i in range(unexposed[curr_card] + 1):
             for later_cards_expose_option in later_cards_expose_options:
