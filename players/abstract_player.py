@@ -180,6 +180,13 @@ class AbstractPlayer(abc.ABC):
                 self.resources[Resource.Grain] >= 1 and
                 self.pieces[Colony.Settlement] > 0)
 
+    def amount_of_settlements_can_afford(self):
+        return min(self.pieces[Colony.Settlement],
+                   self.resources[Resource.Brick],
+                   self.resources[Resource.Lumber],
+                   self.resources[Resource.Wool],
+                   self.resources[Resource.Grain])
+
     def can_settle_city(self):
         """
         indicate whether there are enough resources to build a city

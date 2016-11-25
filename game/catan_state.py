@@ -6,7 +6,7 @@ from typing import List, Tuple
 import numpy as np
 
 from algorithms.abstract_state import AbstractState
-from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts
+from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts, Location
 from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard, LastDevCardIndex, FirstDevCardIndex
 from game.pieces import Colony, Road
@@ -302,7 +302,7 @@ class CatanState(AbstractState):
         new_moves = []
         if not player.has_unexposed_development_card():
             return moves
-        expose_options = self._get_dev_card_exposure_options_min_card_index(FirstDevCardIndex)
+        expose_options = self._get_dev_card_exposure_options_min_card_index()
         for move in moves:
             for expose_option in expose_options:
                 new_move = copy.deepcopy(move)
@@ -348,7 +348,7 @@ class CatanState(AbstractState):
         new_moves = moves_without_monopoly + monopoly_applied_moves
         return moves + new_moves
 
-    def _get_dev_card_exposure_options_min_card_index(self, min_dev_card_index) -> List[defaultdict]:
+    def _get_dev_card_exposure_options_min_card_index(self, min_dev_card_index=FirstDevCardIndex) -> List[defaultdict]:
         if min_dev_card_index > LastDevCardIndex:
             return [defaultdict(int)]
         player = self.get_current_player()
@@ -416,30 +416,54 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if player.can_settle_settlement():
-                for settleable_location in self.board.get_settleable_locations_by_player(player):
+            locations = self.board.get_settleable_locations_by_player(player)
+            for i in range(1, player.amount_of_settlements_can_afford() + 1):
+                settlement_options = self._locations_options_i_chosen_min_location_index(i, locations)
+                for option in settlement_options:
                     new_move = copy.deepcopy(move)
-                    new_move.locations_to_be_set_to_settlements.append(settleable_location)
-                    new_moves.append(new_move)
+                    new_move.locations_to_be_set_to_settlements = option
+                    new_moves.append(new_moves)
             self.revert_pretend_to_make_a_move(move)
-        if not new_moves:  # End of recursion
-            return moves
-        return moves + self._get_all_possible_settlements_moves(new_moves)
+        return moves + new_moves
 
     def _get_all_possible_cities_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if player.can_settle_city():
-                for cityable_location in self.board.get_settlements_by_player(player):
+            locations = self.board.get_settlements_by_player(player)
+            for i in range(1, player.amount_of_settlements_can_afford() + 1):
+                settlement_options = self._locations_options_i_chosen_min_location_index(i, locations)
+                for option in settlement_options:
                     new_move = copy.deepcopy(move)
-                    new_move.locations_to_be_set_to_cities.append(cityable_location)
-                    new_moves.append(new_move)
+                    new_move.locations_to_be_set_to_cities = option
+                    new_moves.append(new_moves)
             self.revert_pretend_to_make_a_move(move)
-        if not new_moves:  # End of recursion
-            return moves
-        return moves + self._get_all_possible_cities_moves(new_moves)
+        return moves + new_moves
+
+    def _locations_options_i_chosen_min_location_index(self, i: int, locations: List[Location],
+                                                       min_location_index=0) -> List[List[Location]]:
+        """
+        returns a list of locations lists that represent locations choices
+        :param i: number of locations to be chosen
+        :param locations: the list of possible locations
+        :param min_location_index: no need to set this value. used for the recursive implementation
+        :return: List[List[Location]] s.t. each List[Location] represents an option to pick i
+                                                                            locations from the provided locations
+        """
+        if i > len(locations) - min_location_index:  # Not enough locations beyond index
+            return []
+        if i == 0 or (not locations) or min_location_index == len(locations):
+            # the last check is redundant but should be here in case of future changes
+            return []
+
+        options_without_curr_location = self._locations_options_i_chosen_min_location_index(i, locations,
+                                                                                            min_location_index + 1)
+        options_with_curr_location = self._locations_options_i_chosen_min_location_index(i - 1, locations,
+                                                                                         min_location_index + 1)
+        for option_with_curr_location in options_with_curr_location:
+            option_with_curr_location.append(locations[min_location_index])
+        return options_with_curr_location + options_without_curr_location
 
     def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
