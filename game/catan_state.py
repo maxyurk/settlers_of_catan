@@ -422,7 +422,7 @@ class CatanState(AbstractState):
                 for option in settlement_options:
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_settlements = option
-                    new_moves.append(new_moves)
+                    new_moves.append(new_move)
             self.revert_pretend_to_make_a_move(move)
         return moves + new_moves
 
@@ -437,7 +437,7 @@ class CatanState(AbstractState):
                 for option in settlement_options:
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities = option
-                    new_moves.append(new_moves)
+                    new_moves.append(new_move)
             self.revert_pretend_to_make_a_move(move)
         return moves + new_moves
 
@@ -451,13 +451,17 @@ class CatanState(AbstractState):
         :return: List[List[Location]] s.t. each List[Location] represents an option to pick i
                                                                             locations from the provided locations
         """
-        if i == 0 or (not locations) or min_location_index == len(locations):
-            return [[]]
+        assert i > 0
+        if (not locations) or min_location_index >= len(locations):
+            return []
         if i > len(locations) - min_location_index:  # Not enough locations beyond index
             return []
 
         options_without_curr_location = self._locations_options_i_chosen_min_location_index(i, locations,
                                                                                             min_location_index + 1)
+        if i == 1:
+            options_without_curr_location.append([locations[min_location_index]])
+            return options_without_curr_location
         options_with_curr_location = self._locations_options_i_chosen_min_location_index(i - 1, locations,
                                                                                          min_location_index + 1)
         for option_with_curr_location in options_with_curr_location:
@@ -608,13 +612,14 @@ class CatanState(AbstractState):
         moves = [empty_move]
         moves = self._get_all_possible_settlements_moves(moves)
         moves.remove(empty_move)
-        assert all([(len(move.resources_exchanges) == 0 and
-                     sum(move.development_cards_to_be_exposed.values()) == 0 and
-                     len(move.paths_to_be_paved) == 0 and
-                     len(move.locations_to_be_set_to_settlements) == 1 and
-                     len(move.locations_to_be_set_to_cities) == 0 and
-                     move.development_cards_to_be_purchased_count == 0 and
-                     not move.did_get_largest_army_card and
-                     not move.did_get_longest_road_card and
-                     move.robber_placement_land == self.board.get_robber_land()) for move in moves])
+        for move in moves:
+            assert len(move.resources_exchanges) == 0
+            assert sum(move.development_cards_to_be_exposed.values()) == 0
+            assert len(move.paths_to_be_paved) == 0
+            assert len(move.locations_to_be_set_to_settlements) == 1
+            assert len(move.locations_to_be_set_to_cities) == 0
+            assert move.development_cards_to_be_purchased_count == 0
+            assert not move.did_get_largest_army_card
+            assert not move.did_get_longest_road_card
+            assert (move.robber_placement_land == self.board.get_robber_land() or move.robber_placement_land is None)
         return moves
