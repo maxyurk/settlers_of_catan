@@ -73,7 +73,7 @@ class TestCatanState(TestCase):
         # assert only road paving in logical locations is possible
         moves = self.state.get_next_moves()
         self.assertEqual(len(moves), 4)
-        expected_possible_roads = {(0, 4), (7, 11), (7, 12)}
+        expected_possible_roads = {(4, 0), (11, 7), (12, 7)}
         actual_possible_roads = set()
         for move in moves:
             self.assertEqual(sum(move.development_cards_to_be_exposed.values()), 0)
