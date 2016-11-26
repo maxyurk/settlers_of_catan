@@ -52,7 +52,6 @@ class TestBoard(TestCase):
         self.assertEqual(len(self.b._roads_and_colonies.nodes()), 54)
         self.assertEqual(len(self.b._lands), 19)
 
-
     def test_get_settleable_locations_by_player(self):
         self.assertListEqual(self.b.get_settleable_locations_by_player(self.player1), [])
 

@@ -51,6 +51,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         expectimax with alpha-beta pruning
         INITIALISATION:
             alpha_beta(self.max_depth, -Math.inf, Math.inf, False)
+            first player should be maximizing
         :param depth: the current depth in the game tree
         :param alpha: the limit from above to the best move
         :param beta: the limit from below to the best move

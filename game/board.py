@@ -509,24 +509,8 @@ class Board:
         vertices_by_players = self.get_locations_by_players()
         edges_by_players = self.get_paths_by_players()
 
-        # NOTE: this implementation works, but for some reason
-        # the plotted graph is sometimes scattered
-        #
-        # colors = ['m', 'g', 'b', 'r']
-        # for player in vertices_by_players.keys():
-        #     color = 'grey'
-        #     if player is not None:
-        #         color = colors.pop()
-        #     networkx.draw_spectral(self._roads_and_colonies,
-        #                            with_labels=True,
-        #                            nodelist=vertices_by_players[player],
-        #                            node_color=color,
-        #                            edgelist=edges_by_players[player],
-        #                            edge_color=color)
-        #     print('{} is {}'.format(player, color))
-        # matplotlib.pyplot.show()
-
         g = networkx.nx_agraph.to_agraph(self._roads_and_colonies)
+        g.graph_attr['overlap'] = 'false'
         colors = ['orange', 'brown', 'blue', 'red']
         for player in vertices_by_players.keys():
             color = 'grey'
@@ -561,6 +545,7 @@ class Board:
             for node in land.locations:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
+
         g.layout()
         g.draw(file_name)
 

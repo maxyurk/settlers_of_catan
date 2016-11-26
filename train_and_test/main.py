@@ -27,20 +27,21 @@ def execute_game():
 
     def h(s: CatanState):
         score = 0
-        locations = s.board.get_locations_colonised_by_player(p1)
-        for location in locations:
-            factor = s.board.get_colony_type_at_location(location).value
-            for dice_value in s.board.get_surrounding_dice_values(location):
-                score += s.get_probabilities_by_dice_values()[dice_value] * factor
-        roads = s.board.get_roads_paved_by_player(p1)
-        for road in roads:
-            factor = 0.5
-            for dice_value in s.board.get_adjacent_to_path_dice_values(road):
-                score += s.get_probabilities_by_dice_values()[dice_value] * factor
+        for player, sign in [(p1, 1), (p2, -1)]:
+            locations = s.board.get_locations_colonised_by_player(player)
+            for location in locations:
+                factor = s.board.get_colony_type_at_location(location).value
+                for dice_value in s.board.get_surrounding_dice_values(location):
+                    score += s.get_probabilities_by_dice_values()[dice_value] * factor * sign
+            roads = s.board.get_roads_paved_by_player(player)
+            for road in roads:
+                factor = 0.5
+                for dice_value in s.board.get_adjacent_to_path_dice_values(road):
+                    score += s.get_probabilities_by_dice_values()[dice_value] * factor * sign
         return score
 
     p1.set_heuristic(h)
-    p2 = RandomPlayer(seed)
+    p2 = AlphaBetaPlayer(seed, timeout_seconds)
     state = CatanState([p1, p2], seed)
 
     clean_previous_images()
