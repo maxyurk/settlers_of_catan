@@ -196,6 +196,11 @@ class AbstractPlayer(abc.ABC):
                 self.resources[Resource.Grain] >= 2 and
                 self.pieces[Colony.City] > 0)
 
+    def amount_of_cities_can_afford(self):
+        return min(int(self.resources[Resource.Ore] / 3),
+                   int(self.resources[Resource.Grain] / 2),
+                   self.pieces[Colony.City])
+
     def has_resources_for_development_card(self):
         """
         indicate whether there are enough resources to buy a development card

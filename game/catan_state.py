@@ -432,7 +432,7 @@ class CatanState(AbstractState):
         for move in moves:
             self.pretend_to_make_a_move(move)
             locations = self.board.get_settlements_by_player(player)
-            for i in range(1, player.amount_of_settlements_can_afford() + 1):
+            for i in range(1, player.amount_of_cities_can_afford() + 1):
                 settlement_options = self._locations_options_i_chosen_min_location_index(i, locations)
                 for option in settlement_options:
                     new_move = copy.deepcopy(move)
