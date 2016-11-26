@@ -64,6 +64,7 @@ class Resource(enum.Enum):
     Grain = 3
     Ore = 4
 
+
 LastResourceIndex = 4  # must be the same as the last resource
 FirsResourceIndex = 0  # must be the same as the first resource
 
@@ -164,6 +165,7 @@ class Land(namedtuple('LandTuple', ['resource', 'dice_value', 'identifier', 'loc
      -Locations list (the locations around it)
      -all adjacent colonies
     """
+
     def __deepcopy__(self, memo_dict=None):
         return self
 
@@ -177,7 +179,7 @@ class Board:
     lands = 'l'
     harbor = 'h'
 
-    def __init__(self, seed: int=None):
+    def __init__(self, seed: int = None):
         """
         Board of the game settlers of catan
         :param seed: optional parameter. send the same number in the range [0,1) to get the same map
@@ -284,13 +286,13 @@ class Board:
 
         less_than_two_roads_paved = len(roads) < 2
         if less_than_two_roads_paved:
-            return [(u, v) for u in self.get_settlements_by_player(player)
+            return [(max(u, v), min(u, v)) for u in self.get_settlements_by_player(player)
                     for v in self._roads_and_colonies.neighbors(u)
                     if self.has_road_been_paved_by(None, (u, v))]
 
         uncolonised_by_other_players = [v for v in set(chain(*roads))
                                         if self.is_colonised_by(player, v) or not self.is_colonised(v)]
-        return [(u, v) for u in uncolonised_by_other_players
+        return [(max(u, v), min(u, v)) for u in uncolonised_by_other_players
                 for v in self._roads_and_colonies.neighbors(u)
                 if self.has_road_been_paved_by(None, (u, v))]
 

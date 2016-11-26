@@ -169,6 +169,11 @@ class AbstractPlayer(abc.ABC):
                 self.resources[Resource.Lumber] >= 1 and
                 self.pieces[Road.Paved] > 0)
 
+    def amount_of_roads_can_afford(self):
+        return min(self.resources[Resource.Brick],
+                   self.resources[Resource.Lumber],
+                   self.pieces[Road.Paved])
+
     def can_settle_settlement(self):
         """
         indicate whether there are enough resources to build a settlement

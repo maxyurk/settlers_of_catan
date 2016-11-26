@@ -8,7 +8,7 @@ class CatanMove(AbstractMove):
     def __init__(self, robber_placement_land=None):
         self.resources_exchanges = []
         self.development_cards_to_be_exposed = defaultdict(int)
-        self.paths_to_be_paved = []
+        self.paths_to_be_paved = {}
         self.locations_to_be_set_to_settlements = []
         self.locations_to_be_set_to_cities = []
         self.development_cards_to_be_purchased_count = 0

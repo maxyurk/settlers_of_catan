@@ -1,12 +1,12 @@
 import copy
-from collections import defaultdict
+from collections import defaultdict, Set
 from collections import namedtuple
 from typing import List, Tuple
 
 import numpy as np
 
 from algorithms.abstract_state import AbstractState
-from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts, Location
+from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts, Location, Path
 from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard, LastDevCardIndex, FirstDevCardIndex
 from game.pieces import Colony, Road
@@ -391,25 +391,49 @@ class CatanState(AbstractState):
         new_moves = []
         for move in moves:
             self.pretend_to_make_a_move(move)
-            if player.can_pave_road():
-                for path_nearby in self.board.get_unpaved_paths_near_player(player):
+            if player.can_pave_road():  # optimization
+                paths_options_with_duplicates = self._paths_options_up_to_i_chosen(player.amount_of_roads_can_afford())
+                paths_options = set(frozenset(p) for p in paths_options_with_duplicates)
+                for option in paths_options:
                     new_move = copy.deepcopy(move)
-                    new_move.paths_to_be_paved.append(path_nearby)
+                    new_move.paths_to_be_paved = option
                     new_moves.append(new_move)
             self.revert_pretend_to_make_a_move(move)
 
-        if not new_moves:  # End of recursion
-            return moves
-        players_road_building_dev_cards = player.unexposed_development_cards[DevelopmentCard.RoadBuilding]
-        if players_road_building_dev_cards > 0:  # optimization
-            moves_corresponding_to_dev_cards = [
-                move for move in moves
-                if not ((move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] != 0) and
-                        (len(move.paths_to_be_paved) < 2 * players_road_building_dev_cards))
-                ]
-        else:
-            moves_corresponding_to_dev_cards = moves
-        return moves_corresponding_to_dev_cards + self._get_all_possible_paths_moves(new_moves)
+        # RoadBuilding
+        if player.unexposed_development_cards[DevelopmentCard.RoadBuilding] == 0:  # optimization
+            return moves + new_moves
+        return [move for move in moves + new_moves if
+                len(move.paths_to_be_paved) >= 2 * move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding]]
+
+    def _paths_options_up_to_i_chosen(self, i) -> List[List[Path]]:
+        """
+        return all the options with up to i paths to be paved (duplications are possible!)
+        the result (list of options) doesn't include the empty option (the option not to build any roads).
+        :param i: Maximal number of options
+        :return: List of List[Path] - list of valid 'paths_to_be_paved' options. returns [] in case of no valid option
+        (Notice it's different from [[]] which is illegal)
+        """
+        if i == 0:
+            return []
+
+        player = self.get_current_player()
+        paths_nearby = self.board.get_unpaved_paths_near_player(player)
+
+        if i == 1:  # optimization
+            return [[x] for x in paths_nearby]
+
+        options = []
+        for curr_path in paths_nearby:
+            self.board.set_path(player, curr_path, Road.Paved)  # put on board
+            options_given_curr_chosen = self._paths_options_up_to_i_chosen(i - 1)  # get all options  with curr
+            assert options_given_curr_chosen != [[]]
+            self.board.set_path(player, curr_path, Road.Unpaved)  # remove from board
+            options.append([curr_path])  # curr only option
+            for option in options_given_curr_chosen:  # generate an append all options including curr
+                option.append(curr_path)
+                options.append(option)
+        return options
 
     def _get_all_possible_settlements_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
@@ -600,8 +624,8 @@ class CatanState(AbstractState):
                     for move in moves])
 
         def valid_path_paved(move):
-            path = move.paths_to_be_paved[0]
-            settlement = move.locations_to_be_set_to_settlements[0]
+            path = next(iter(move.paths_to_be_paved))
+            settlement = next(iter(move.locations_to_be_set_to_settlements))
             return settlement in path
 
         moves = [move for move in moves if valid_path_paved(move)]
