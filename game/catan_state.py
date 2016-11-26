@@ -455,7 +455,7 @@ class CatanState(AbstractState):
             return []
         if i == 0 or (not locations) or min_location_index == len(locations):
             # the last check is redundant but should be here in case of future changes
-            return []
+            return [[]]
 
         options_without_curr_location = self._locations_options_i_chosen_min_location_index(i, locations,
                                                                                             min_location_index + 1)
