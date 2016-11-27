@@ -22,9 +22,9 @@ class MonteCarlo(TimeoutableAlgorithm):
         victories_histogram = [0 for _ in range(len(moves))]
         while not self.ran_out_of_time:
             for move, i in zip(moves, range(len(victories_histogram))):
-                state.make_move(move)
+                state.pretend_to_make_a_move(move)
                 result = self._roll_out(state, max_depth, True)
-                state.unmake_move(move)
+                state.unpretend_to_make_a_move(move)
                 if self.ran_out_of_time:
                     break
         # TODO decide whether the fact that the non-complete iteration affects the result is okay or not
@@ -57,7 +57,7 @@ class MonteCarlo(TimeoutableAlgorithm):
             if len(next_moves) == 0:
                 next_moves = moves
             move = self._random_choice(next_moves)
-            state.make_move(move)
+            state.pretend_to_make_a_move(move)
             result = self._roll_out(state, depth - 1, True)
-            state.unmake_move(move)
+            state.unpretend_to_make_a_move(move)
         return result

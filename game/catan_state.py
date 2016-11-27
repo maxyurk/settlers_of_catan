@@ -52,6 +52,8 @@ class CatanState(AbstractState):
         self.probabilities_by_development_cards = {
             card: DevelopmentCard.get_occurrences_in_deck_count(card) / len(self._dev_cards)
             for card in DevelopmentCard}
+        self._exposed_dev_cards_counters = {card: 0 for card in DevelopmentCard}
+        self._num_of_purchased_cards_in_current_turn = 0
 
     def is_final(self):
         """
@@ -99,26 +101,29 @@ class CatanState(AbstractState):
         moves = self._get_all_possible_development_cards_purchase_moves(moves)
         return moves
 
-    def is_initialization_phase(self):
-        return self.board.get_colonies_score(self.get_current_player()) < 2
-
-    def make_move(self, move: CatanMove):
-        """makes specified move"""
-        move.apply(self)
+    def pretend_to_make_a_move(self, move: CatanMove):
+        self._pretend_to_make_a_move(move)
 
         self._update_longest_road(move)
         self._update_largest_army(move)
 
         self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
-    def unmake_move(self, move: CatanMove):
-        """reverts specified move"""
+    def unpretend_to_make_a_move(self, move: CatanMove):
         self._current_player_index = (self._current_player_index - 1) % len(self.players)
-
-        move.revert(self)
 
         self._revert_update_longest_road(move)
         self._revert_update_largest_army(move)
+
+        self._unpretend_to_make_a_move(move)
+
+    def make_move(self, move: CatanMove):
+        """makes specified move"""
+        self.pretend_to_make_a_move(move)
+
+    def unmake_move(self, move: CatanMove):
+        """reverts specified move"""
+        self.unpretend_to_make_a_move(move)
 
     def get_next_random_moves(self) -> List[RandomMove]:
         random_moves = []
@@ -144,6 +149,9 @@ class CatanState(AbstractState):
 
     def pop_development_card(self) -> DevelopmentCard:
         return self._dev_cards.pop()
+
+    def is_initialization_phase(self):
+        return self.board.get_colonies_score(self.get_current_player()) < 2
 
     def _update_longest_road(self, move: CatanMove):
         # TODO this can be converted to something done in CatanMove
@@ -239,7 +247,7 @@ class CatanState(AbstractState):
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
             if (move.development_cards_to_be_exposed[DevelopmentCard.YearOfPlenty] == 0) and \
                     (move.development_cards_to_be_exposed[DevelopmentCard.Monopoly] == 0):
-                self.pretend_to_make_a_move(move)
+                self._pretend_to_make_a_move(move)
                 for source_resource in Resource:
                     for i in range(int(player.get_resource_count(source_resource) /
                                                self._calc_curr_player_trade_ratio(source_resource))):
@@ -248,7 +256,7 @@ class CatanState(AbstractState):
                             new_move = copy.deepcopy(move)
                             new_move.resources_exchanges = trades
                             new_moves.append(new_move)
-                self.revert_pretend_to_make_a_move(move)
+                self._unpretend_to_make_a_move(move)
             else:
                 for trades in no_dev_card_side_effect_trades:
                     new_move = copy.deepcopy(move)
@@ -390,7 +398,7 @@ class CatanState(AbstractState):
         player = self.get_current_player()
         new_moves = []
         for move in moves:
-            self.pretend_to_make_a_move(move)
+            self._pretend_to_make_a_move(move)
             if player.can_pave_road():  # optimization
                 paths_options_with_duplicates = self._paths_options_up_to_i_chosen(player.amount_of_roads_can_afford())
                 paths_options = set(frozenset(p) for p in paths_options_with_duplicates)
@@ -398,7 +406,7 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.paths_to_be_paved = option
                     new_moves.append(new_move)
-            self.revert_pretend_to_make_a_move(move)
+            self._unpretend_to_make_a_move(move)
 
         # RoadBuilding
         if player.unexposed_development_cards[DevelopmentCard.RoadBuilding] == 0:  # optimization
@@ -439,7 +447,7 @@ class CatanState(AbstractState):
         player = self.get_current_player()
         new_moves = []
         for move in moves:
-            self.pretend_to_make_a_move(move)
+            self._pretend_to_make_a_move(move)
             locations = self.board.get_settleable_locations_by_player(player)
             for i in range(1, player.amount_of_settlements_can_afford() + 1):
                 settlement_options = self._locations_options_i_chosen_min_location_index(i, locations)
@@ -447,14 +455,14 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_settlements = option
                     new_moves.append(new_move)
-            self.revert_pretend_to_make_a_move(move)
+            self._unpretend_to_make_a_move(move)
         return moves + new_moves
 
     def _get_all_possible_cities_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
-            self.pretend_to_make_a_move(move)
+            self._pretend_to_make_a_move(move)
             locations = self.board.get_settlements_by_player(player)
             for i in range(1, player.amount_of_cities_can_afford() + 1):
                 settlement_options = self._locations_options_i_chosen_min_location_index(i, locations)
@@ -462,7 +470,7 @@ class CatanState(AbstractState):
                     new_move = copy.deepcopy(move)
                     new_move.locations_to_be_set_to_cities = option
                     new_moves.append(new_move)
-            self.revert_pretend_to_make_a_move(move)
+            self._unpretend_to_make_a_move(move)
         return moves + new_moves
 
     def _locations_options_i_chosen_min_location_index(self, i: int, locations: List[Location],
@@ -496,18 +504,18 @@ class CatanState(AbstractState):
         player = self.get_current_player()
         new_moves = []
         for move in moves:
-            self.pretend_to_make_a_move(move)
+            self._pretend_to_make_a_move(move)
             if (player.has_resources_for_development_card() and
                         len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
-            self.revert_pretend_to_make_a_move(move)
+            self._unpretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
         return moves + self._get_all_possible_development_cards_purchase_moves(new_moves)
 
-    def pretend_to_make_a_move(self, move: CatanMove):
+    def _pretend_to_make_a_move(self, move: CatanMove):
         if move.robber_placement_land is None:
             move.robber_placement_land = self.board.get_robber_land()
         player = self.get_current_player()
@@ -535,13 +543,13 @@ class CatanState(AbstractState):
         for count in range(0, move.development_cards_to_be_purchased_count):
             """ TODO add cards purchases to expectimax - same as dice throw
                 (need to inc/dec the counter of unexposed dev cards)
-                change the expectimax call from move.apply to pretend_to_make_a_move
+                change the expectimax call from move.apply to _pretend_to_make_a_move
                 revert the cards purchases in expectimax - same as dice throw
                 (need to inc/dec the counter of unexposed dev cards)
             """
             player.remove_resources_for_development_card()
 
-    def revert_pretend_to_make_a_move(self, move: CatanMove):
+    def _unpretend_to_make_a_move(self, move: CatanMove):
         player = self.get_current_player()
         for count in range(0, move.development_cards_to_be_purchased_count):
             player.add_resources_for_development_card()

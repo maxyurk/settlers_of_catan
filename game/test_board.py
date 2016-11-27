@@ -79,9 +79,9 @@ class TestBoard(TestCase):
         paths = self.b.get_unpaved_paths_near_player(self.player1)
         self.assertEqual(len(paths), 5)
         self.assertIn((4, 1), paths)
-        self.assertIn((11, 16), paths)
+        self.assertIn((16, 11), paths)
         self.assertIn((12, 8), paths)
-        self.assertIn((12, 17), paths)
+        self.assertIn((17, 12), paths)
 
     def test_get_settled_locations_by_player(self):
         self.assertListEqual(self.b.get_locations_colonised_by_player(self.player1), [0, 7])

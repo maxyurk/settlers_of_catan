@@ -30,26 +30,6 @@ class CatanMove(AbstractMove):
                 len(self.locations_to_be_set_to_cities) != 0 or
                 self.development_cards_to_be_purchased_count != 0)
 
-    def apply(self, state):
-        """
-        apply the move in the given state
-        :param state: the state to apply the moves on
-        :return: None
-        """
-
-        # this does almost everything, the rest is done in this method
-        state.pretend_to_make_a_move(self)
-
-    def revert(self, state):
-        """
-        revert the move in the given state
-        :param state: the state to revert the moves on
-        :return: None
-        """
-
-        # this does almost everything, the rest is done in this method
-        state.revert_pretend_to_make_a_move(self)
-
 
 class RandomMove(AbstractRandomMove):
     @property
