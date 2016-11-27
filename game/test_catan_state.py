@@ -4,7 +4,7 @@ from unittest import TestCase
 from algorithms.abstract_state import AbstractState
 from game.board import Resource
 from game.catan_state import CatanState
-from game.catan_moves import CatanMove
+from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
 from players.abstract_player import AbstractPlayer
@@ -101,7 +101,8 @@ class TestCatanState(TestCase):
         self.assertEqual(self.state.board.get_robber_land().resource, None)
 
         # roll 7
-        self.state.throw_dice(rolled_dice_number=7)
+        roll_7 = RandomMove(7, self.state.probabilities_by_dice_values[7], self.state)
+        self.state.make_random_move(roll_7)
 
         # assert all next moves move the robber
         moves = self.state.get_next_moves()
@@ -113,7 +114,7 @@ class TestCatanState(TestCase):
         self.state.make_move(moves[0])
 
         # roll 7 again
-        self.state.throw_dice(rolled_dice_number=7)
+        self.state.make_random_move(roll_7)
 
         # assert all next moves move the robber again
         for move in self.state.get_next_moves():
@@ -223,11 +224,12 @@ class TestCatanState(TestCase):
         self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
         self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
 
-        land_resource = self.state.board._lands[0][0]
-        land_number = self.state.board._lands[0][1]
+        land_resource = self.state.board._lands[0].resource
+        dice_value = self.state.board._lands[0].dice_value
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
-        move = self.state.throw_dice(land_number)
+        roll_dice = RandomMove(dice_value, self.state.probabilities_by_dice_values[dice_value], self.state)
+        self.state.make_random_move(roll_dice)
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
     def test_unthrow_dice(self):
@@ -236,13 +238,14 @@ class TestCatanState(TestCase):
         self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
         self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
 
-        land_resource = self.state.board._lands[0][0]
-        land_number = self.state.board._lands[0][1]
+        land_resource = self.state.board._lands[0].resource
+        dice_value = self.state.board._lands[0].dice_value
 
-        move = self.state.throw_dice(land_number)
+        roll_dice = RandomMove(dice_value, self.state.probabilities_by_dice_values[dice_value], self.state)
+        self.state.make_random_move(roll_dice)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 1)
 
-        self.state.unthrow_dice(move)
+        self.state.unmake_random_move(roll_dice)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)

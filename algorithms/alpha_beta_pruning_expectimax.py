@@ -30,7 +30,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         self._is_maximizing_player = is_maximizing_player
         self.evaluate_heuristic_value = evaluate_heuristic_value
 
-    def get_best_move(self, state, max_depth):
+    def get_best_move(self, state: AbstractState, max_depth: int):
         """
         get best move, based on the expectimax with alpha-beta pruning algorithm
         with given heuristic function
@@ -39,10 +39,11 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         :param max_depth: the maximum depth the algorithm will reach in the game tree
         :return: the best move
         """
+        assert isinstance(max_depth, int) and max_depth > 0
+        assert isinstance(state, AbstractState)
+
         self.state = state
         self.max_depth = max_depth
-        assert max_depth > 0
-        assert state is not None
         _, best_move = self._alpha_beta_expectimax(self.max_depth, -math.inf, math.inf, False)
         return best_move
 
@@ -66,12 +67,11 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
 
         if is_random_event:
             v = 0
-
-            for number, probability in self.state.get_probabilities_by_dice_values().items():
-                random_move = self.state.throw_dice(number)
+            for random_move in self.state.get_next_random_moves():
+                self.state.make_random_move(random_move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, False)
-                v += probability * u
-                self.state.unthrow_dice(random_move)
+                v += random_move.probability * u
+                self.state.unmake_random_move(random_move)
             return v, None
         elif self._is_maximizing_player(self.state.get_current_player()):
             v = -math.inf

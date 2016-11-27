@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from algorithms.abstract_state import AbstractMove
+from algorithms.abstract_state import AbstractMove, AbstractRandomMove
 from players.abstract_player import AbstractPlayer
 
 
@@ -51,9 +51,17 @@ class CatanMove(AbstractMove):
         state.revert_pretend_to_make_a_move(self)
 
 
-class RandomMove(AbstractMove):
-    def __init__(self, rolled_dice: int, state):
+class RandomMove(AbstractRandomMove):
+    @property
+    def probability(self):
+        return self._probability
+
+    def __init__(self, rolled_dice: int, probability: float, state):
+        assert isinstance(probability, float) and 0 <= probability <= 1
+        assert rolled_dice in state.probabilities_by_dice_values.keys()
+
         self._rolled_dice = rolled_dice
+        self._probability = probability
         self._state = state
         self._previous_rolled_dice = self._state.current_dice_number
         self._resources_by_players = {}

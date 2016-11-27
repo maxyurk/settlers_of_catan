@@ -1,8 +1,18 @@
 import abc
+from typing import List
 
 
 class AbstractMove(abc.ABC):
     pass
+
+
+class AbstractRandomMove(AbstractMove):
+    @property
+    def probability(self):
+        """
+        :return: the probability of this random move to happen
+        """
+        raise NotImplementedError()
 
 
 class AbstractState(abc.ABC):
@@ -21,7 +31,7 @@ class AbstractState(abc.ABC):
         computes the next moves available from the current state
         :return List of AbstractMove: a list of the next moves
         """
-        return []
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def make_move(self, move: AbstractMove):
@@ -39,16 +49,19 @@ class AbstractState(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_probabilities_by_dice_values(self):
-        """returns a map of (items to send to throw_dice) -> (their probability)"""
+    def get_next_random_moves(self) -> List[AbstractRandomMove]:
+        """
+        computes the next random moves available from the current state
+        :return List of AbstractMove: a list of the next random moves
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def throw_dice(self, rolled_dice_number: int=None):
-        """throws the dice(if no number specified), and gives players the cards they need"""
+    def make_random_move(self, move: AbstractRandomMove):
+        """makes specified random move"""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unthrow_dice(self, move: AbstractMove):
-        """reverts the dice throwing and cards giving"""
+    def unmake_random_move(self, move: AbstractRandomMove):
+        """reverts specified random move"""
         raise NotImplementedError()

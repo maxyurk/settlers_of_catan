@@ -43,6 +43,16 @@ class CatanState(AbstractState):
         self._player_with_largest_army = []
         self._player_with_longest_road = []
 
+        self.probabilities_by_dice_values = {}
+        for i, p in zip(range(2, 7), range(1, 6)):
+            self.probabilities_by_dice_values[i] = p / 36
+            self.probabilities_by_dice_values[14 - i] = p / 36
+        self.probabilities_by_dice_values[7] = 6 / 36
+
+        self.probabilities_by_development_cards = {
+            card: DevelopmentCard.get_occurrences_in_deck_count(card) / len(self._dev_cards)
+            for card in DevelopmentCard}
+
     def is_final(self):
         """
         check if the current state in the game is final or not
@@ -110,40 +120,30 @@ class CatanState(AbstractState):
         self._revert_update_longest_road(move)
         self._revert_update_largest_army(move)
 
+    def get_next_random_moves(self) -> List[RandomMove]:
+        random_moves = []
+        for number, probability in self.probabilities_by_dice_values.items():
+            random_moves.append(RandomMove(number, probability, self))
+        return random_moves
+
+    def make_random_move(self, random_move: RandomMove=None):
+        if random_move is None:
+            rolled_dice_value = self._random_choice(a=list(self.probabilities_by_dice_values.keys()),
+                                                    p=list(self.probabilities_by_dice_values.values()))
+            random_move = RandomMove(rolled_dice=rolled_dice_value,
+                                     probability=self.probabilities_by_dice_values[rolled_dice_value],
+                                     state=self)
+        random_move.apply()
+
+    def unmake_random_move(self, random_move: RandomMove):
+        random_move.revert()
+
     def get_current_player(self):
         """returns the player that should play next"""
         return self.players[self._current_player_index]
 
-    numbers_to_probabilities = {}
-
-    for i, p in zip(range(2, 7), range(1, 6)):
-        numbers_to_probabilities[i] = p / 36
-        numbers_to_probabilities[14 - i] = p / 36
-    numbers_to_probabilities[7] = 6 / 36
-
-    def get_probabilities_by_dice_values(self):
-        return CatanState.numbers_to_probabilities
-
     def pop_development_card(self) -> DevelopmentCard:
         return self._dev_cards.pop()
-
-    def throw_dice(self, rolled_dice_number: int = None):
-        """throws the dice (if no number is given), and gives players the cards they need
-        :return: the dice throwing result (a number in the range [2,12])
-        """
-        if rolled_dice_number is None:
-            rolled_dice_number = self._random_choice(a=list(CatanState.numbers_to_probabilities.keys()),
-                                                     p=list(CatanState.numbers_to_probabilities.values()))
-        move = RandomMove(rolled_dice_number, self)
-        move.apply()
-        return move
-
-    def unthrow_dice(self, move: RandomMove):
-        """reverts the dice throwing and cards giving
-        :param move: the random move to revert
-        :return: None
-        """
-        move.revert()
 
     def _update_longest_road(self, move: CatanMove):
         # TODO this can be converted to something done in CatanMove

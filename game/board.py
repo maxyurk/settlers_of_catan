@@ -548,6 +548,14 @@ class Board:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
 
+            g.add_node('game_data', shape='rectangle',
+                       label='hello world\n this is a very long text\n this is a very long text'
+                             '\n this is a very long text\n this is a very long text\n this is a very long text'
+                             '\n this is a very long text\n this is a very long text\n this is a very long text'
+                             '\n this is a very long text\n this is a very long text\n this is a very long text'
+                             '\n this is a very long text\n this is a very long text\n this is a very long text'
+                             '\n this is a very long text')
+
         g.layout()
         g.draw(file_name)
 
