@@ -58,13 +58,6 @@ def execute_game():
         turn_count += 1
         robber_placement = state.board.get_robber_land()
 
-        state.make_random_move()
-        # --------------------------------------
-        # TODO remove
-        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.error('~BUG random move changed score~')
-            exit(1)
-        # --------------------------------------
         move = state.get_current_player().choose_move(state)
         # --------------------------------------
         # TODO remove
@@ -73,6 +66,14 @@ def execute_game():
             exit(1)
         # --------------------------------------
         state.make_move(move)
+
+        state.make_random_move()
+        # --------------------------------------
+        # TODO remove
+        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
+            logger.error('~BUG random move changed score~')
+            exit(1)
+            # --------------------------------------
 
         current_scores = state.get_scores_by_player()
         score_changed = scores_changed(state, previous_scores, current_scores)

@@ -512,7 +512,7 @@ class Board:
         edges_by_players = self.get_paths_by_players()
 
         g = networkx.nx_agraph.to_agraph(self._roads_and_colonies)
-        g.graph_attr['overlap'] = 'false'
+        # g.graph_attr['overlap'] = 'false'
         colors = ['orange', 'brown', 'blue', 'red']
         for player in vertices_by_players.keys():
             color = 'grey'

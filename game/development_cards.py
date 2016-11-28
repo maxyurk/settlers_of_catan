@@ -22,7 +22,7 @@ class DevelopmentCard(enum.Enum):
     @staticmethod
     @property
     def deck_size():
-        return 31
+        return 26
 
 FirstDevCardIndex = DevelopmentCard.Knight.value
 LastDevCardIndex = DevelopmentCard.YearOfPlenty.value

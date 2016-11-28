@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict, Set
 from collections import namedtuple
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 
@@ -13,6 +13,7 @@ from game.pieces import Colony, Road
 from players.abstract_player import AbstractPlayer
 
 ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_resource', 'count'])
+PurchaseOption = namedtuple('PurchaseOption', ['purchased_cards_counters', 'probability'])
 
 
 class CatanState(AbstractState):
@@ -49,11 +50,9 @@ class CatanState(AbstractState):
             self.probabilities_by_dice_values[14 - i] = p / 36
         self.probabilities_by_dice_values[7] = 6 / 36
 
-        self.probabilities_by_development_cards = {
-            card: DevelopmentCard.get_occurrences_in_deck_count(card) / len(self._dev_cards)
-            for card in DevelopmentCard}
-        self._exposed_dev_cards_counters = {card: 0 for card in DevelopmentCard}
-        self._num_of_purchased_cards_in_current_turn = 0
+        self._unexposed_dev_cards_counters = {card: DevelopmentCard.get_occurrences_in_deck_count(card)
+                                              for card in DevelopmentCard}
+        self._purchased_development_cards_in_current_turn_amount = 0
 
     def is_final(self):
         """
@@ -98,7 +97,7 @@ class CatanState(AbstractState):
         moves = self._get_all_possible_paths_moves(moves)
         moves = self._get_all_possible_settlements_moves(moves)
         moves = self._get_all_possible_cities_moves(moves)
-        moves = self._get_all_possible_development_cards_purchase_moves(moves)
+        moves = self._get_all_possible_development_cards_purchase_count_moves(moves)
         return moves
 
     def pretend_to_make_a_move(self, move: CatanMove):
@@ -107,11 +106,9 @@ class CatanState(AbstractState):
         self._update_longest_road(move)
         self._update_largest_army(move)
 
-        self._current_player_index = (self._current_player_index + 1) % len(self.players)
+        self._purchased_development_cards_in_current_turn_amount = move.development_cards_to_be_purchased_count
 
     def unpretend_to_make_a_move(self, move: CatanMove):
-        self._current_player_index = (self._current_player_index - 1) % len(self.players)
-
         self._revert_update_longest_road(move)
         self._revert_update_largest_army(move)
 
@@ -126,21 +123,34 @@ class CatanState(AbstractState):
         self.unpretend_to_make_a_move(move)
 
     def get_next_random_moves(self) -> List[RandomMove]:
+        if self.is_initialization_phase():
+            return [RandomMove(2, 1.0, self)]
         random_moves = []
-        for number, probability in self.probabilities_by_dice_values.items():
-            random_moves.append(RandomMove(number, probability, self))
+        for dice_value, dice_probability in self.probabilities_by_dice_values.items():
+            for purchase_option, purchase_probability in self._get_all_possible_development_cards_purchase_options(
+                    self._purchased_development_cards_in_current_turn_amount):
+                random_moves.append(
+                    RandomMove(dice_value, dice_probability * purchase_probability, self, purchase_option))
         return random_moves
 
     def make_random_move(self, random_move: RandomMove=None):
         if random_move is None:
             rolled_dice_value = self._random_choice(a=list(self.probabilities_by_dice_values.keys()),
                                                     p=list(self.probabilities_by_dice_values.values()))
+            purchased_development_cards = defaultdict(int)
+            for _ in range(self._purchased_development_cards_in_current_turn_amount):
+                card = self.pop_development_card()
+                purchased_development_cards[card] += 1
+
             random_move = RandomMove(rolled_dice=rolled_dice_value,
                                      probability=self.probabilities_by_dice_values[rolled_dice_value],
-                                     state=self)
+                                     state=self,
+                                     development_card_purchases=purchased_development_cards)
         random_move.apply()
+        self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
     def unmake_random_move(self, random_move: RandomMove):
+        self._current_player_index = (self._current_player_index - 1) % len(self.players)
         random_move.revert()
 
     def get_current_player(self):
@@ -500,20 +510,52 @@ class CatanState(AbstractState):
             option_with_curr_location.append(locations[min_location_index])
         return options_with_curr_location + options_without_curr_location
 
-    def _get_all_possible_development_cards_purchase_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
+    def _get_all_possible_development_cards_purchase_count_moves(self, moves: List[CatanMove]) -> List[CatanMove]:
         player = self.get_current_player()
         new_moves = []
         for move in moves:
             self._pretend_to_make_a_move(move)
             if (player.has_resources_for_development_card() and
-                        len(self._dev_cards) > move.development_cards_to_be_purchased_count):
+                    len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
             self._unpretend_to_make_a_move(move)
         if not new_moves:  # End of recursion
             return moves
-        return moves + self._get_all_possible_development_cards_purchase_moves(new_moves)
+        return moves + self._get_all_possible_development_cards_purchase_count_moves(new_moves)
+
+    def _get_all_possible_development_cards_purchase_options(
+            self, cards_to_purchase_count: int,
+            development_cards: List[DevelopmentCard]=[c for c in DevelopmentCard],
+            purchased_cards: Dict[DevelopmentCard, int]={cc: 0 for cc in DevelopmentCard},
+            probability: float=1.0) -> List[PurchaseOption]:
+
+        if cards_to_purchase_count == 0:
+            return [PurchaseOption(copy.deepcopy(purchased_cards), probability)]
+
+        cards_that_can_be_purchased_count = sum(self._unexposed_dev_cards_counters[card] for card in development_cards)
+        if cards_that_can_be_purchased_count < cards_to_purchase_count:
+            return []
+
+        card = development_cards[0]
+        if self._unexposed_dev_cards_counters[card] == 0:
+            return self._get_all_possible_development_cards_purchase_options(
+                cards_to_purchase_count, development_cards[1:], purchased_cards, probability)
+
+        without_card = self._get_all_possible_development_cards_purchase_options(
+            cards_to_purchase_count, development_cards[1:], purchased_cards, probability)
+
+        cards_left = sum(self._unexposed_dev_cards_counters[card] for card in DevelopmentCard)
+        probability = probability * self._unexposed_dev_cards_counters[card] / cards_left
+        purchased_cards[card] += 1
+        self._unexposed_dev_cards_counters[card] -= 1
+        with_card = self._get_all_possible_development_cards_purchase_options(
+            cards_to_purchase_count - 1, development_cards, purchased_cards, probability)
+        purchased_cards[card] -= 1
+        self._unexposed_dev_cards_counters[card] += 1
+
+        return with_card + without_card
 
     def _pretend_to_make_a_move(self, move: CatanMove):
         if move.robber_placement_land is None:

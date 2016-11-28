@@ -1,6 +1,8 @@
 from collections import defaultdict
+from typing import Dict
 
 from algorithms.abstract_state import AbstractMove, AbstractRandomMove
+from game.development_cards import DevelopmentCard
 from players.abstract_player import AbstractPlayer
 
 
@@ -36,11 +38,13 @@ class RandomMove(AbstractRandomMove):
     def probability(self):
         return self._probability
 
-    def __init__(self, rolled_dice: int, probability: float, state):
+    def __init__(self, rolled_dice: int, probability: float, state,
+                 development_card_purchases: Dict[DevelopmentCard, int]=defaultdict(int)):
         assert isinstance(probability, float) and 0 <= probability <= 1
         assert rolled_dice in state.probabilities_by_dice_values.keys()
 
         self._rolled_dice = rolled_dice
+        self._development_card_purchases = development_card_purchases
         self._probability = probability
         self._state = state
         self._previous_rolled_dice = self._state.current_dice_number
@@ -57,6 +61,11 @@ class RandomMove(AbstractRandomMove):
             self._resources_by_players = self._state.board.get_players_to_resources_by_dice_value(self._rolled_dice)
         AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._rolled_dice
+        for card, amount in self._development_card_purchases.items():
+            for _ in range(amount):
+                player = self._state.get_current_player()
+                player.add_unexposed_development_card(card)
+                player.remove_resources_for_development_card()
 
     def revert(self):
         if self._state.is_initialization_phase():
@@ -67,3 +76,9 @@ class RandomMove(AbstractRandomMove):
             update_method = AbstractPlayer.remove_resource
         AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._previous_rolled_dice
+        for card, amount in self._development_card_purchases.items():
+            for _ in range(amount):
+                player = self._state.get_current_player()
+                assert isinstance(player, AbstractPlayer)
+                player.remove_unexposed_development_card(card)
+                player.add_resources_for_development_card()

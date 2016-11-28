@@ -1,9 +1,11 @@
+from itertools import combinations_with_replacement, combinations, chain
 from math import ceil
 from unittest import TestCase
 
+
 from algorithms.abstract_state import AbstractState
 from game.board import Resource
-from game.catan_state import CatanState
+from game.catan_state import CatanState, PurchaseOption
 from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
@@ -214,8 +216,10 @@ class TestCatanState(TestCase):
     def test_get_current_player(self):
         self.assertEqual(self.state.get_current_player(), self.players[0])
         self.state.make_move(CatanMove())
+        self.state.make_random_move()
         self.assertEqual(self.state.get_current_player(), self.players[1])
         self.state.make_move(CatanMove())
+        self.state.make_random_move()
         self.assertEqual(self.state.get_current_player(), self.players[0])
 
     def test_throw_dice(self):
@@ -249,3 +253,26 @@ class TestCatanState(TestCase):
         self.state.unmake_random_move(roll_dice)
 
         self.assertEqual(self.players[0].get_resource_count(land_resource), 0)
+
+    def test_get_all_possible_development_cards_purchase_options(self):
+        purchase_count = 2
+        options = self.state._get_all_possible_development_cards_purchase_options(purchase_count)
+
+        number_of_cards_combinations = sum(1 for _ in combinations_with_replacement(DevelopmentCard, purchase_count))
+        self.assertEqual(len(options), number_of_cards_combinations)
+
+        for option1, option2 in combinations(options, 2):
+            self.assertNotEqual(option1, option2)
+            self.assertNotEqual(option1.purchased_cards_counters, option2.purchased_cards_counters)
+
+        for option in options:
+            self.assertLess(option.probability, 1)
+            self.assertGreater(option.probability, 0)
+
+        # this assertion is just to make sure I'm testing the probability of the right options
+        two_knights_counters = {card: 2 if card is DevelopmentCard.Knight else 0 for card in DevelopmentCard}
+        assert options[0].purchased_cards_counters == two_knights_counters
+
+        two_knight_cards_expected_probability = (15 / 26) * (14 / 25)
+        two_knight_cards_actual_probability = options[0].probability
+        self.assertAlmostEqual(two_knight_cards_expected_probability, two_knight_cards_actual_probability)
