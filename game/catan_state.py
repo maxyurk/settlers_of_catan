@@ -252,12 +252,10 @@ class CatanState(AbstractState):
         no_dev_card_side_effect_trades = []
         for source_resource in Resource:
 
-            possible_trades_count = (int(player.get_resource_count(source_resource) /
-                                         self._calc_curr_player_trade_ratio(source_resource)))
-            for i in range(possible_trades_count):
-                no_dev_card_side_effect_trades = (
-                    no_dev_card_side_effect_trades +
-                    self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, FirsResourceIndex))
+            max_num_of_trades = (int(player.get_resource_count(source_resource) /
+                                     self._calc_curr_player_trade_ratio(source_resource)))
+            for i in range(1, max_num_of_trades + 1):
+                no_dev_card_side_effect_trades += self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, FirsResourceIndex)
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
@@ -265,8 +263,9 @@ class CatanState(AbstractState):
                     (move.development_cards_to_be_exposed[DevelopmentCard.Monopoly] == 0):
                 self._pretend_to_make_a_move(move)
                 for source_resource in Resource:
-                    for i in range(int(player.get_resource_count(source_resource) /
-                                               self._calc_curr_player_trade_ratio(source_resource))):
+                    max_num_of_trades = int(player.get_resource_count(source_resource) /
+                                            self._calc_curr_player_trade_ratio(source_resource))
+                    for i in range(1, max_num_of_trades + 1):
                         for trades in self._trade_options_with_i_trades_and_min_resource_index(i, source_resource,
                                                                                                FirsResourceIndex):
                             new_move = copy.deepcopy(move)
@@ -284,6 +283,7 @@ class CatanState(AbstractState):
     def _trade_options_with_i_trades_and_min_resource_index(self, i, source_resource, min_resource_index) \
             -> List[List[ResourceExchange]]:
         """
+        Using with i == 0 has no meaning
         Returns all possible trade combinations when making i trades
         returns type is List[List[ResourceExchange]] : List of Lists of ResourceExchanges
         all the counters in each list of ResourceExchanges sum to i.
@@ -294,7 +294,7 @@ class CatanState(AbstractState):
                  Returns type is List[List[ResourceExchange]] : List of Lists of ResourceExchanges
         """
         if i == 0:
-            return []
+            return [[]]
         if min_resource_index == source_resource.value:
             return self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, min_resource_index + 1)
         if min_resource_index == LastResourceIndex or \
@@ -309,11 +309,12 @@ class CatanState(AbstractState):
             partial_trades = self._trade_options_with_i_trades_and_min_resource_index(i - min_resource_trade_count,
                                                                                       source_resource,
                                                                                       min_resource_index + 1)
-            for partial_trade in partial_trades:
-                partial_trade.append(ResourceExchange(source_resource=source_resource,
-                                                      target_resource=Resource(min_resource_index),
-                                                      count=min_resource_trade_count))
-            trades = trades + partial_trades
+            if min_resource_trade_count != 0:  # We don't need moves where count is 0
+                for partial_trade in partial_trades:
+                    partial_trade.append(ResourceExchange(source_resource=source_resource,
+                                                          target_resource=Resource(min_resource_index),
+                                                          count=min_resource_trade_count))
+            trades += partial_trades
 
         min_resource_only_trade = ResourceExchange(source_resource=source_resource,
                                                    target_resource=Resource(min_resource_index),

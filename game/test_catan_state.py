@@ -4,7 +4,7 @@ from unittest import TestCase
 
 
 from algorithms.abstract_state import AbstractState
-from game.board import Resource
+from game.board import Resource, Harbor
 from game.catan_state import CatanState, PurchaseOption
 from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard
@@ -354,3 +354,72 @@ class TestCatanState(TestCase):
         two_knight_cards_expected_probability = (14 / 25) * (13 / 24)
         two_knight_cards_actual_probability = options[0].probability
         self.assertAlmostEqual(two_knight_cards_expected_probability, two_knight_cards_actual_probability)
+
+    def test_get_all_possible_trade_moves_empty_move_no_resources(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+
+    def test_get_all_possible_trade_moves_empty_move_not_enough_resources(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        for _ in range(3):
+            for resource in Resource:
+                self.players[0].add_resource(resource)
+            moves = self.state._get_all_possible_trade_moves(moves)
+            assert moves == [empty_move]
+
+    def test_get_all_possible_trade_moves_single_trade(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        self.players[0].add_resource(Resource.Lumber, 4)
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves[0] == empty_move
+        assert len(moves[1].resources_exchanges) == 1
+        assert len(moves[2].resources_exchanges) == 1
+        assert len(moves[3].resources_exchanges) == 1
+        assert len(moves[4].resources_exchanges) == 1
+        assert len(moves) == 5
+
+    def test_get_all_possible_trade_moves_different_ratio_generic(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        self.players[0].add_resource(Resource.Lumber, 2)
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        self.players[0].add_resource(Resource.Lumber, 1)
+        self.state.board._locations_by_harbors[Harbor.HarborGeneric].append(0)
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves[0] == empty_move
+        assert len(moves[1].resources_exchanges) == 1
+        assert len(moves[2].resources_exchanges) == 1
+        assert len(moves[3].resources_exchanges) == 1
+        assert len(moves[4].resources_exchanges) == 1
+        assert len(moves) == 5
+
+    def test_get_all_possible_trade_moves_different_ratio_non_generic(self):
+        empty_move = CatanMove()
+        moves = [empty_move]
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        self.players[0].add_resource(Resource.Lumber, 1)
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves == [empty_move]
+        self.players[0].add_resource(Resource.Lumber, 1)
+        self.state.board._locations_by_harbors[Harbor.HarborLumber].append(0)
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        moves = self.state._get_all_possible_trade_moves(moves)
+        assert moves[0] == empty_move
+        assert len(moves[1].resources_exchanges) == 1
+        assert len(moves[2].resources_exchanges) == 1
+        assert len(moves[3].resources_exchanges) == 1
+        assert len(moves[4].resources_exchanges) == 1
+        assert len(moves) == 5
