@@ -1,4 +1,5 @@
 import enum
+from collections import defaultdict
 from collections import namedtuple
 from itertools import chain
 from operator import itemgetter
@@ -187,7 +188,7 @@ class Board:
         assert seed is None or (isinstance(seed, int) and seed > 0)
 
         self._shuffle = np.random.RandomState(seed).shuffle
-        self._player_colonies_points = {}
+        self._player_colonies_points = defaultdict(int)
         self._players_by_roads = {}
 
         self._create_and_shuffle_lands()
@@ -330,9 +331,7 @@ class Board:
         :param player: a player to get the colonies-score of
         :return: int, the score of the specified player
         """
-        if player in self._player_colonies_points:
-            return self._player_colonies_points[player]
-        return 0
+        return self._player_colonies_points[player]
 
     def get_longest_road_length_of_player(self, player) -> int:
         """
@@ -351,26 +350,6 @@ class Board:
             return roads_threshold
         sub_graph_of_player = networkx.Graph(roads_paved_by_player)
         max_road_length = roads_threshold
-
-        # TODO think if perhaps only some of the nodes can be checked
-        # ------
-        # IDEA 1
-        # ------
-        # perhaps check only those with degree 1 + those that are in a cycle
-        # (a good idea, but the overhead of finding cycles may be not worth the while.
-        #  how to find vertices to check: maybe something like starting from vertices with degree 1 and climb all the
-        #  way to the rest of the graph, and stop each time there's a split (degree 2). edges the weren't visited are
-        #  in a cycle)
-        # ------
-        # IDEA 2
-        # ------
-        # maintain roads paved by player lists to avoid repeated graph traversals
-        # (this may be useful in other places in the code where edges are iterated)
-        # ------
-        # IDEA 3
-        # ------
-        # we have only two connected components. perhaps just starting from both initial villages is enough,
-        # and seraching for connected components is redundant. especially when there's only one
 
         connected_components_and_edge_count_sorted_by_edge_count = sorted(
             ((g, g.size()) for g in networkx.connected_component_subgraphs(sub_graph_of_player, copy=False)),
@@ -421,8 +400,6 @@ class Board:
         """
         assert not (player is None and colony != Colony.Uncolonised)
 
-        if player not in self._player_colonies_points:
-            self._player_colonies_points[player] = 0
         vertex_attributes = self._roads_and_colonies.node[location]
 
         previous_colony = self.get_colony_type_at_location(location)
