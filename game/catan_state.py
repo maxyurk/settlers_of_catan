@@ -575,6 +575,8 @@ class CatanState(AbstractState):
         for dev_card_type in DevelopmentCard:
             for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
                 player.expose_development_card(dev_card_type)
+                self._unexposed_dev_cards_counters[dev_card_type] -= 1
+                assert self._unexposed_dev_cards_counters[dev_card_type] >= 0
         for exchange in move.resources_exchanges:
             player.trade_resources(exchange.source_resource, exchange.target_resource, exchange.count,
                                    self._calc_curr_player_trade_ratio(exchange.source_resource))
@@ -609,6 +611,7 @@ class CatanState(AbstractState):
         for dev_card_type in DevelopmentCard:
             for _ in range(move.development_cards_to_be_exposed[dev_card_type]):
                 player.un_expose_development_card(dev_card_type)
+                self._unexposed_dev_cards_counters[dev_card_type] += 1
         road_dev_cards_count = move.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding]
         self._revert_road_building_dev_card_side_effect(road_dev_cards_count)
         robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant

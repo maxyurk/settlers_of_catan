@@ -274,21 +274,83 @@ class TestCatanState(TestCase):
         purchase_count = 2
         options = self.state._get_all_possible_development_cards_purchase_options(purchase_count)
 
+        # assert the number of options is (26 choose 2) (because there are 26 unexposed cards)
         number_of_cards_combinations = sum(1 for _ in combinations_with_replacement(DevelopmentCard, purchase_count))
         self.assertEqual(len(options), number_of_cards_combinations)
 
+        # assert all options are different
         for option1, option2 in combinations(options, 2):
             self.assertNotEqual(option1, option2)
             self.assertNotEqual(option1.purchased_cards_counters, option2.purchased_cards_counters)
 
+        # assert all probabilities are valid probabilities, and there are no moves where probability = 0
         for option in options:
             self.assertLess(option.probability, 1)
             self.assertGreater(option.probability, 0)
 
         # this assertion is just to make sure I'm testing the probability of the right options
-        two_knights_counters = {card: 2 if card is DevelopmentCard.Knight else 0 for card in DevelopmentCard}
+        two_knights_counters = {card: purchase_count if card is DevelopmentCard.Knight else 0
+                                for card in DevelopmentCard}
         assert options[0].purchased_cards_counters == two_knights_counters
 
+        # assert the probability is right, given no knight was exposed (there are 15 knight in total)
         two_knight_cards_expected_probability = (15 / 26) * (14 / 25)
+        two_knight_cards_actual_probability = options[0].probability
+        self.assertAlmostEqual(two_knight_cards_expected_probability, two_knight_cards_actual_probability)
+
+    def test_probability_calculation_given_card_used(self):
+        # given this board
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 39, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 40, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (39, 44), Road.Paved)
+        self.state.board.set_path(self.players[1], (40, 44), Road.Paved)
+        self.state.turns_count = 4
+
+        # buy two knight cards
+        self.state.make_move(CatanMove())
+        purchase_count = 2
+        two_knight_cards_expected_probability = (15 / 26) * (14 / 25)
+        two_knights_counters = {card: purchase_count if card is DevelopmentCard.Knight else 0
+                                for card in DevelopmentCard}
+        self.state.make_random_move(
+            RandomMove(2, two_knight_cards_expected_probability * self.state.probabilities_by_dice_values[2],
+                       self.state, two_knights_counters))
+
+        # make empty move
+        self.state.make_move(CatanMove())
+        self.state.make_random_move(RandomMove(2, self.state.probabilities_by_dice_values[2], self.state))
+
+        # expose one knight
+        move = CatanMove(self.state.board._lands[0])
+        move.development_cards_to_be_exposed[DevelopmentCard.Knight] = 1
+        self.state.make_move(move)
+        self.state.make_random_move(RandomMove(2, self.state.probabilities_by_dice_values[2], self.state))
+
+        # get all purchase options of two cards
+        options = self.state._get_all_possible_development_cards_purchase_options(purchase_count)
+
+        # assert the number of options is (25 choose 2) (because there are 25 unexposed cards)
+        number_of_cards_combinations = sum(1 for _ in combinations_with_replacement(DevelopmentCard, purchase_count))
+        self.assertEqual(len(options), number_of_cards_combinations)
+
+        # assert all options are different
+        for option1, option2 in combinations(options, 2):
+            self.assertNotEqual(option1, option2)
+            self.assertNotEqual(option1.purchased_cards_counters, option2.purchased_cards_counters)
+
+        # assert all probabilities are valid probabilities, and there are no moves where probability = 0
+        for option in options:
+            self.assertLess(option.probability, 1)
+            self.assertGreater(option.probability, 0)
+
+        # this assertion is just to make sure I'm testing the probability of the right options
+        assert options[0].purchased_cards_counters == two_knights_counters
+
+        # assert the probability is right, given one knight was exposed
+        two_knight_cards_expected_probability = (14 / 25) * (13 / 24)
         two_knight_cards_actual_probability = options[0].probability
         self.assertAlmostEqual(two_knight_cards_expected_probability, two_knight_cards_actual_probability)
