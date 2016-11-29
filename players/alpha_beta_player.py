@@ -15,9 +15,12 @@ class AlphaBetaPlayer(AbstractPlayer):
 
         super().__init__(seed, timeout_seconds)
 
+        def default_heuristic_function(state):
+            return float(state.get_scores_by_player()[self])
+
         self.expectimax_alpha_beta = AlphaBetaExpectimax(
             is_maximizing_player=lambda p: p is self,
-            evaluate_heuristic_value=lambda s: float(s.get_scores_by_player()[self]),
+            evaluate_heuristic_value=default_heuristic_function,
             timeout_seconds=timeout_seconds)
 
     def choose_move(self, state: CatanState):

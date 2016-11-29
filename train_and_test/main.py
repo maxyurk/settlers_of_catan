@@ -3,7 +3,7 @@ import os
 from game.catan_state import CatanState
 from players.alpha_beta_player import AlphaBetaPlayer
 from players.random_player import RandomPlayer
-from train_and_test.logger import logger
+from train_and_test.logger import logger, fileLogger
 
 
 def scores_changed(state, previous_scores, scores):
@@ -20,8 +20,8 @@ def clean_previous_images():
 
 
 def execute_game():
-    seed = 234
-    timeout_seconds = 0.1
+    seed = None
+    timeout_seconds = 0.001
 
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
 
@@ -41,9 +41,11 @@ def execute_game():
         return score
 
     p1.set_heuristic(h)
-    # p2 = AlphaBetaPlayer(seed, timeout_seconds)
-    p2 = RandomPlayer(seed)
-    state = CatanState([p1, p2], seed)
+    p2 = AlphaBetaPlayer(seed, timeout_seconds)
+    p3 = RandomPlayer(seed)
+    # p2 = RandomPlayer(seed)
+    players = [p1, p2, p3]
+    state = CatanState(players, seed)
 
     clean_previous_images()
 
@@ -67,7 +69,7 @@ def execute_game():
         if score_changed:
             previous_scores = current_scores
 
-        if score_changed:  # uncomment to print only when scores change
+        if max(previous_scores.values()) >= 10:
             scores = ''.join('{} '.format(v) for v in previous_scores.values())
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
                          (k == 'robber_placement_land' and v == robber_placement) and not
@@ -78,9 +80,17 @@ def execute_game():
                 turn_count, ''.join('{}_'.format(v) for v in previous_scores.values()))
             state.board.plot_map(image_name, state.current_dice_number)
 
+    players_scores_by_names = {
+        (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
+         if isinstance(v, AlphaBetaPlayer) else None): previous_scores[v]
+        for k, v in locals().items() if v in players
+        }
+    fileLogger.info('|'.join(' {} : {} '.format(name, score) for name, score in players_scores_by_names.items()))
+
+
 
 def main():
-    for _ in range(1):
+    for _ in range(3):
         execute_game()
 
 if __name__ == '__main__':
