@@ -1,8 +1,10 @@
+import copy
+from math import ceil
 from typing import Dict, Callable, List
 
 from algorithms.abstract_state import AbstractState, AbstractMove
 from algorithms.alpha_beta_pruning_expectimax import AlphaBetaExpectimax
-from game.board import Resource
+from game.board import Resource, ResourceAmounts
 from game.catan_state import CatanState
 from players.abstract_player import AbstractPlayer
 from players.random_player import RandomPlayer
@@ -38,10 +40,36 @@ class AlphaBetaPlayer(AbstractPlayer):
             return RandomPlayer.choose_move(self, state)
 
     def choose_resources_to_drop(self) -> Dict[Resource, int]:
-        # TODO implement
-        # for the meantime use the random choice of RandomPlayer
-        # kind of a hack. but how awesome is that?!
-        return RandomPlayer.choose_resources_to_drop(self)
+        resources_count = sum(self.resources.values())
+        resources_to_drop_count = ceil(resources_count / 2)
+        if self.can_settle_city() and resources_count >= sum(ResourceAmounts.city.values()) * 2:
+            self.remove_resources_and_piece_for_city()
+            resources_to_drop = copy.deepcopy(self.resources)
+            self.add_resources_and_piece_for_city()
+
+        elif self.can_settle_settlement() and resources_count >= sum(ResourceAmounts.settlement.values()) * 2:
+            self.remove_resources_and_piece_for_settlement()
+            resources_to_drop = copy.deepcopy(self.resources)
+            self.add_resources_and_piece_for_settlement()
+
+        elif (self.has_resources_for_development_card() and
+              resources_count >= sum(ResourceAmounts.development_card.values()) * 2):
+            self.remove_resources_for_development_card()
+            resources_to_drop = copy.deepcopy(self.resources)
+            self.add_resources_for_development_card()
+
+        elif self.can_pave_road() and resources_count >= sum(ResourceAmounts.road.values() * 2):
+            self.remove_resources_and_piece_for_road()
+            resources_to_drop = copy.deepcopy(self.resources)
+            self.add_resources_and_piece_for_road()
+
+        else:
+            return RandomPlayer.choose_resources_to_drop(self)
+
+        for resource in Resource:
+            while resources_to_drop_count != sum(resources_to_drop.values()) and self.resources[Resource] > 0:
+                self.remove_resource(resource)
+        return resources_to_drop
 
     def set_heuristic(self, evaluate_heuristic_value: Callable[[AbstractState], float]):
         """

@@ -535,6 +535,7 @@ class Board:
                            .replace('RoadBuilding: 2', 'Road Building').replace('VictoryPoint: 1', 'Victory Point')
                            .replace('Monopoly: 3', 'Monopoly').replace('YearOfPlenty: 4', 'Year Of Plenty')
                            .replace('Resource.', '').replace('Colony.', '').replace('.Paved', ''))
+
         if dice is not None:
             blocks.append('rolled:\\n{}'.format(dice))
         g.add_node('game_data_{}'.format(id(v)), shape='record', label='|'.join(blocks),
