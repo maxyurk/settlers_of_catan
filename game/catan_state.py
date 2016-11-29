@@ -3,6 +3,7 @@ from collections import defaultdict, Set
 from collections import namedtuple
 from typing import List, Tuple, Dict
 from itertools import combinations_with_replacement
+
 import numpy as np
 
 from algorithms.abstract_state import AbstractState
@@ -172,7 +173,6 @@ class CatanState(AbstractState):
         return self.turns_count < len(self.players) * 2
 
     def _update_longest_road(self, move: CatanMove):
-        # TODO this can be converted to something done in CatanMove
         if len(move.paths_to_be_paved) == 0:
             return
 
@@ -188,7 +188,6 @@ class CatanState(AbstractState):
             self._player_with_longest_road.pop()
 
     def _update_largest_army(self, move: CatanMove):
-        # TODO this can be converted to something done in CatanMove
         if move.development_card_to_be_exposed != DevelopmentCard.Knight:
             return
 

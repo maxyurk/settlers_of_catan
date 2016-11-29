@@ -49,23 +49,17 @@ def execute_game():
 
     turn_count = 0
     previous_scores = state.get_scores_by_player()
-    logger.info('| {}| turn: {:3} | game start |'
-                .format(''.join('{} '.format(v) for v in previous_scores.values()), turn_count))
     state.board.plot_map('turn_{}_scores_{}.png'
                          .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
-
     while not state.is_final():
-        logger.info('-----------------p{}\'s turn-----------------'.format(state._current_player_index))
+        logger.info('----------------------p{}\'s turn----------------------'.format(state._current_player_index))
+
         turn_count += 1
         robber_placement = state.board.get_robber_land()
+        dice_roll = state.current_dice_number
 
         move = state.get_current_player().choose_move(state)
-        # --------------------------------------
-        # TODO remove
-        if __debug__ and scores_changed(state, previous_scores, state.get_scores_by_player()):
-            logger.error('~BUG choose move changed score~')
-            exit(1)
-        # --------------------------------------
+        assert not scores_changed(state, previous_scores, state.get_scores_by_player())
         state.make_move(move)
         state.make_random_move()
 
@@ -74,20 +68,16 @@ def execute_game():
         if score_changed:
             previous_scores = current_scores
 
-        if move.is_doing_anything():
+        if score_changed:  # uncomment to print only when scores change
+            scores = ''.join('{} '.format(v) for v in previous_scores.values())
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
                          (k == 'robber_placement_land' and v == robber_placement) and not
                          (isinstance(v, dict) and sum(v.values()) == 0)}
-            logger.info('| {}| turn: {:3} | move:{} |'
-                        .format(''.join('{} '.format(v) for v in previous_scores.values()), turn_count, move_data))
-            state.board.plot_map('turn_{}_{}.png'
-                                 .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
-        elif __debug__ and score_changed:
-            # TODO remove
-            logger.error('~BUG. score changed, without movement | p1 {}:p2 {} | turn: {}'
-                         .format(current_scores[p1], current_scores[p2], turn_count))
-            exit(1)
-    logger.info('| {}| turn: {:3} | game end |'.format(''.join('{} '.format(previous_scores.values())), turn_count))
+            logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
+
+            image_name = 'turn_{}_scores_{}.png'.format(
+                turn_count, ''.join('{}_'.format(v) for v in previous_scores.values()))
+            state.board.plot_map(image_name, dice_roll)
 
 
 def main():

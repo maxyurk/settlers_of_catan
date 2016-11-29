@@ -179,7 +179,6 @@ def path_key(edge):
 
 class Board:
     player = 'p'
-    lands = 'l'
     harbor = 'h'
 
     def __init__(self, seed: int = None):
@@ -486,7 +485,7 @@ class Board:
         """
         return self._players_by_roads[path_key(path)] is player
 
-    def plot_map(self, file_name='tmp.png'):
+    def plot_map(self, file_name='tmp.png', dice=None):
         vertices_by_players = self.get_locations_by_players()
         edges_by_players = self.get_paths_by_players()
 
@@ -526,13 +525,14 @@ class Board:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
 
-            for v in self._player_colonies_points.keys():
-                s = '\n'.join(wrap(pformat(
-                    {k: v for k, v in v.__dict__.items()
-                     if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds'}}),
-                    width=45))
-                g.add_node('game_data_{}'.format(id(v)), shape='rectangle', label=s, fontsize=30)
-
+        for v in self._player_colonies_points.keys():
+            s = '\n'.join(wrap(pformat(
+                {k: v for k, v in v.__dict__.items()
+                 if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds'}}),
+                width=45))
+            g.add_node('game_data_{}'.format(id(v)), shape='rectangle', label=s, fontsize=20, fontname='times-bold')
+        if dice is not None:
+            g.add_node('dice', shape='rectangle', label='rolled {}'.format(dice), fontsize=40, fontname='times-bold')
         g.layout()
         g.draw(file_name)
 
