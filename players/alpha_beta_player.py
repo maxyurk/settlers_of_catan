@@ -58,7 +58,7 @@ class AlphaBetaPlayer(AbstractPlayer):
             resources_to_drop = copy.deepcopy(self.resources)
             self.add_resources_for_development_card()
 
-        elif self.can_pave_road() and resources_count >= sum(ResourceAmounts.road.values() * 2):
+        elif self.can_pave_road() and resources_count >= sum(ResourceAmounts.road.values()) * 2:
             self.remove_resources_and_piece_for_road()
             resources_to_drop = copy.deepcopy(self.resources)
             self.add_resources_and_piece_for_road()
