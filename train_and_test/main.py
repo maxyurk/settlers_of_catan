@@ -49,8 +49,8 @@ def execute_game():
 
     turn_count = 0
     previous_scores = state.get_scores_by_player()
-    logger.info('| {}| turn: {} | game start |'
-                .format(''.join('{}  '.format(v) for v in previous_scores.values()), turn_count))
+    logger.info('| {}| turn: {:3} | game start |'
+                .format(''.join('{} '.format(v) for v in previous_scores.values()), turn_count))
     state.board.plot_map('turn_{}_scores_{}.png'
                          .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
 
@@ -78,7 +78,7 @@ def execute_game():
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
                          (k == 'robber_placement_land' and v == robber_placement) and not
                          (isinstance(v, dict) and sum(v.values()) == 0)}
-            logger.info('| {}| turn: {} | move:{} |'
+            logger.info('| {}| turn: {:3} | move:{} |'
                         .format(''.join('{} '.format(v) for v in previous_scores.values()), turn_count, move_data))
             state.board.plot_map('turn_{}_{}.png'
                                  .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
@@ -87,7 +87,7 @@ def execute_game():
             logger.error('~BUG. score changed, without movement | p1 {}:p2 {} | turn: {}'
                          .format(current_scores[p1], current_scores[p2], turn_count))
             exit(1)
-    logger.info('| {}| turn: {} | game end |'.format(''.join('{} '.format(previous_scores.values())), turn_count))
+    logger.info('| {}| turn: {:3} | game end |'.format(''.join('{} '.format(previous_scores.values())), turn_count))
 
 
 def main():

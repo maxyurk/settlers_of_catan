@@ -3,7 +3,9 @@ from collections import defaultdict
 from collections import namedtuple
 from itertools import chain
 from operator import itemgetter
+from pprint import pformat
 from typing import List, Tuple, Set, Dict
+from textwrap import wrap
 
 import networkx
 import numpy as np
@@ -489,7 +491,6 @@ class Board:
         edges_by_players = self.get_paths_by_players()
 
         g = networkx.nx_agraph.to_agraph(self._roads_and_colonies)
-        # g.graph_attr['overlap'] = 'false'
         colors = ['orange', 'brown', 'blue', 'red']
         for player in vertices_by_players.keys():
             color = 'grey'
@@ -513,7 +514,7 @@ class Board:
             land_node_id = 'land ' + str(land.identifier)
             g.add_node(land_node_id)
             resource = 'desert' if land.resource is None else land.resource.name
-            robber = '*' if self._robber_land.identifier == land.identifier else ''
+            robber = '@' if self._robber_land.identifier == land.identifier else ''
             land_label = resource + '\n' + robber + '\n' + str(land.dice_value)
             land_node = g.get_node(land_node_id)
             land_node.attr['label'] = land_label
@@ -525,13 +526,12 @@ class Board:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
 
-            g.add_node('game_data', shape='rectangle',
-                       label='hello world\n this is a very long text\n this is a very long text'
-                             '\n this is a very long text\n this is a very long text\n this is a very long text'
-                             '\n this is a very long text\n this is a very long text\n this is a very long text'
-                             '\n this is a very long text\n this is a very long text\n this is a very long text'
-                             '\n this is a very long text\n this is a very long text\n this is a very long text'
-                             '\n this is a very long text')
+            for v in self._player_colonies_points.keys():
+                s = '\n'.join(wrap(pformat(
+                    {k: v for k, v in v.__dict__.items()
+                     if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds'}}),
+                    width=45))
+                g.add_node('game_data_{}'.format(id(v)), shape='rectangle', label=s, fontsize=30)
 
         g.layout()
         g.draw(file_name)

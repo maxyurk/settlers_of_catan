@@ -51,7 +51,7 @@ class RandomMove(AbstractRandomMove):
         self._resources_by_players = {}
 
     def apply(self):
-        if self._state.is_initialization_phase():
+        if self._state.is_initialisation_phase():
             return
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.remove_resource
@@ -61,14 +61,14 @@ class RandomMove(AbstractRandomMove):
             self._resources_by_players = self._state.board.get_players_to_resources_by_dice_value(self._rolled_dice)
         AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._rolled_dice
+
+        player = self._state.get_current_player()
         for card, amount in self._development_card_purchases.items():
             for _ in range(amount):
-                player = self._state.get_current_player()
                 player.add_unexposed_development_card(card)
-                player.remove_resources_for_development_card()
 
     def revert(self):
-        if self._state.is_initialization_phase():
+        if self._state.is_initialisation_phase():
             return
         if self._rolled_dice == 7:
             update_method = AbstractPlayer.add_resource
@@ -76,9 +76,8 @@ class RandomMove(AbstractRandomMove):
             update_method = AbstractPlayer.remove_resource
         AbstractPlayer.update_players_resources(self._resources_by_players, update_method)
         self._state.current_dice_number = self._previous_rolled_dice
+
+        player = self._state.get_current_player()
         for card, amount in self._development_card_purchases.items():
             for _ in range(amount):
-                player = self._state.get_current_player()
-                assert isinstance(player, AbstractPlayer)
                 player.remove_unexposed_development_card(card)
-                player.add_resources_for_development_card()

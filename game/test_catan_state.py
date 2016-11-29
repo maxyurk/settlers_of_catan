@@ -58,6 +58,11 @@ class TestCatanState(TestCase):
         self.state.board.set_location(self.players[0], 7, Colony.Settlement)
         self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
         self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 39, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 40, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (39, 44), Road.Paved)
+        self.state.board.set_path(self.players[1], (40, 44), Road.Paved)
+        self.state.turns_count = 4
 
         # without resources, assert there's only the "no move" move
         moves = self.state.get_next_moves()
@@ -98,6 +103,7 @@ class TestCatanState(TestCase):
         self.state.board.set_location(self.players[1], 42, Colony.Settlement)
         self.state.board.set_path(self.players[1], (50, 46), Road.Paved)
         self.state.board.set_path(self.players[1], (46, 42), Road.Paved)
+        self.state.turns_count = 4
 
         # assert initial robber placement is on the desert land
         self.assertEqual(self.state.board.get_robber_land().resource, None)
@@ -226,7 +232,12 @@ class TestCatanState(TestCase):
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
         self.state.board.set_location(self.players[0], 1, Colony.Settlement)
         self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
-        self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
+        self.state.board.set_path(self.players[0], (4, 1), Road.Paved)
+        self.state.board.set_location(self.players[1], 50, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 42, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (50, 46), Road.Paved)
+        self.state.board.set_path(self.players[1], (46, 42), Road.Paved)
+        self.state.turns_count = 4
 
         land_resource = self.state.board._lands[0].resource
         dice_value = self.state.board._lands[0].dice_value
@@ -240,7 +251,12 @@ class TestCatanState(TestCase):
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
         self.state.board.set_location(self.players[0], 1, Colony.Settlement)
         self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
-        self.state.board.set_path(self.players[0], (4, 1), Road.Unpaved)
+        self.state.board.set_path(self.players[0], (4, 1), Road.Paved)
+        self.state.board.set_location(self.players[1], 50, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 42, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (50, 46), Road.Paved)
+        self.state.board.set_path(self.players[1], (46, 42), Road.Paved)
+        self.state.turns_count = 4
 
         land_resource = self.state.board._lands[0].resource
         dice_value = self.state.board._lands[0].dice_value

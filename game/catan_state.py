@@ -14,6 +14,7 @@ from players.abstract_player import AbstractPlayer
 
 ResourceExchange = namedtuple('ResourceExchange', ['source_resource', 'target_resource', 'count'])
 PurchaseOption = namedtuple('PurchaseOption', ['purchased_cards_counters', 'probability'])
+KnightCardsCount = int
 
 
 class CatanState(AbstractState):
@@ -26,6 +27,7 @@ class CatanState(AbstractState):
         self.players = players
         self.board = Board(seed)
 
+        self.turns_count = 0
         self._current_player_index = 0
         self.current_dice_number = 0
 
@@ -83,7 +85,7 @@ class CatanState(AbstractState):
         Returns:
             List of AbstractMove: a list of the next moves
         """
-        if self.is_initialization_phase():
+        if self.is_initialisation_phase():
             return self._get_initialisation_moves()
 
         if self.current_dice_number != 7:
@@ -101,6 +103,7 @@ class CatanState(AbstractState):
         return moves
 
     def pretend_to_make_a_move(self, move: CatanMove):
+        self.turns_count += 1
         self._pretend_to_make_a_move(move)
 
         self._update_longest_road(move)
@@ -109,10 +112,13 @@ class CatanState(AbstractState):
         self._purchased_development_cards_in_current_turn_amount = move.development_cards_to_be_purchased_count
 
     def unpretend_to_make_a_move(self, move: CatanMove):
+        self._purchased_development_cards_in_current_turn_amount = 0
+
         self._revert_update_longest_road(move)
         self._revert_update_largest_army(move)
 
         self._unpretend_to_make_a_move(move)
+        self.turns_count -= 1
 
     def make_move(self, move: CatanMove):
         """makes specified move"""
@@ -123,7 +129,7 @@ class CatanState(AbstractState):
         self.unpretend_to_make_a_move(move)
 
     def get_next_random_moves(self) -> List[RandomMove]:
-        if self.is_initialization_phase():
+        if self.is_initialisation_phase():
             return [RandomMove(2, 1.0, self)]
         random_moves = []
         for dice_value, dice_probability in self.probabilities_by_dice_values.items():
@@ -147,6 +153,7 @@ class CatanState(AbstractState):
                                      state=self,
                                      development_card_purchases=purchased_development_cards)
         random_move.apply()
+        self._purchased_development_cards_in_current_turn_amount = 0
         self._current_player_index = (self._current_player_index + 1) % len(self.players)
 
     def unmake_random_move(self, random_move: RandomMove):
@@ -160,8 +167,8 @@ class CatanState(AbstractState):
     def pop_development_card(self) -> DevelopmentCard:
         return self._dev_cards.pop()
 
-    def is_initialization_phase(self):
-        return self.board.get_colonies_score(self.get_current_player()) < 2
+    def is_initialisation_phase(self) -> bool:
+        return self.turns_count < len(self.players) * 2
 
     def _update_longest_road(self, move: CatanMove):
         # TODO this can be converted to something done in CatanMove
@@ -206,8 +213,6 @@ class CatanState(AbstractState):
         if not self._player_with_longest_road:
             return None, 4
         return self._player_with_longest_road[-1]
-
-    KnightCardsCount = int
 
     def _get_largest_army_player_and_size(self) -> Tuple[AbstractPlayer, KnightCardsCount]:
         """
@@ -583,12 +588,6 @@ class CatanState(AbstractState):
             self.board.set_location(player, loc2, Colony.City)
             player.remove_resources_and_piece_for_city()
         for count in range(0, move.development_cards_to_be_purchased_count):
-            """ TODO add cards purchases to expectimax - same as dice throw
-                (need to inc/dec the counter of unexposed dev cards)
-                change the expectimax call from move.apply to _pretend_to_make_a_move
-                revert the cards purchases in expectimax - same as dice throw
-                (need to inc/dec the counter of unexposed dev cards)
-            """
             player.remove_resources_for_development_card()
 
     def _unpretend_to_make_a_move(self, move: CatanMove):
@@ -638,6 +637,7 @@ class CatanState(AbstractState):
     def _get_initialisation_moves(self):
         player = self.get_current_player()
         assert sum(player.resources.values()) == 0
+        assert self.is_initialisation_phase()
 
         player.update_resources(ResourceAmounts.settlement, AbstractPlayer.add_resource)
         moves = self._add_settlements_to_initialisation_moves()
