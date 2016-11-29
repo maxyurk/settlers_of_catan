@@ -490,7 +490,7 @@ class Board:
         edges_by_players = self.get_paths_by_players()
 
         g = networkx.nx_agraph.to_agraph(self._roads_and_colonies)
-        colors = ['orange', 'brown', 'blue', 'red']
+        colors = ['orange', 'green', 'blue', 'red']
         for player in vertices_by_players.keys():
             color = 'grey'
             if player is not None:
@@ -525,14 +525,21 @@ class Board:
                 g.add_edge(node, land_node)
                 g.get_edge(node, land_node).attr['color'] = 'transparent'
 
+        blocks = []
         for v in self._player_colonies_points.keys():
-            s = '\n'.join(wrap(pformat(
+            blocks.append('\\n'.join(wrap(pformat(
                 {k: v for k, v in v.__dict__.items()
                  if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds'}}),
-                width=45))
-            g.add_node('game_data_{}'.format(id(v)), shape='rectangle', label=s, fontsize=20, fontname='times-bold')
+                width=45)).replace('{', '').replace('}', '').replace(',', '').replace('DevelopmentCard.', '')
+                           .replace('<', '').replace('>', '').replace("'", '').replace('Knight: 0', 'Knight')
+                           .replace('RoadBuilding: 2', 'Road Building').replace('VictoryPoint: 1', 'Victory Point')
+                           .replace('Monopoly: 3', 'Monopoly').replace('YearOfPlenty: 4', 'Year Of Plenty')
+                           .replace('Resource.', '').replace('Colony.', '').replace('.Paved', ''))
         if dice is not None:
-            g.add_node('dice', shape='rectangle', label='rolled {}'.format(dice), fontsize=40, fontname='times-bold')
+            blocks.append('rolled:\\n{}'.format(dice))
+        g.add_node('game_data_{}'.format(id(v)), shape='record', label='|'.join(blocks),
+                   fontsize=20, fontname='times-bold')
+
         g.layout()
         g.draw(file_name)
 
