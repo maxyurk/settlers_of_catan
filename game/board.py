@@ -4,8 +4,8 @@ from collections import namedtuple
 from itertools import chain
 from operator import itemgetter
 from pprint import pformat
-from typing import List, Tuple, Set, Dict
 from textwrap import wrap
+from typing import List, Tuple, Set, Dict
 
 import networkx
 import numpy as np
@@ -179,7 +179,7 @@ def path_key(edge):
 
 class Board:
     player = 'p'
-    harbor = 'h'
+    lands = 'l'
 
     def __init__(self, seed: int = None):
         """
