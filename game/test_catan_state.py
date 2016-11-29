@@ -68,7 +68,7 @@ class TestCatanState(TestCase):
         moves = self.state.get_next_moves()
         self.assertEqual(len(moves), 1)
         move = moves[0]
-        self.assertEqual(sum(move.development_cards_to_be_exposed.values()), 0)
+        self.assertIsNone(move.development_card_to_be_exposed)
         self.assertDictEqual(move.paths_to_be_paved, {})
         self.assertListEqual(move.locations_to_be_set_to_settlements, [])
         self.assertListEqual(move.locations_to_be_set_to_cities, [])
@@ -83,7 +83,7 @@ class TestCatanState(TestCase):
         expected_possible_roads = {(4, 0), (11, 7), (12, 7)}
         actual_possible_roads = set()
         for move in moves:
-            self.assertEqual(sum(move.development_cards_to_be_exposed.values()), 0)
+            self.assertIsNone(move.development_card_to_be_exposed)
             self.assertListEqual(move.locations_to_be_set_to_settlements, [])
             self.assertListEqual(move.locations_to_be_set_to_cities, [])
             self.assertEqual(move.development_cards_to_be_purchased_count, 0)
@@ -133,7 +133,7 @@ class TestCatanState(TestCase):
         for i in range(6):
             if i % 2 == 1:
                 # on player2 turn, don't do anything
-                self.state.make_move(CatanMove())
+                self.state.make_move(CatanMove(self.state.board.get_robber_land()))
                 continue
 
             # assert no-one has largest army yet
@@ -145,8 +145,8 @@ class TestCatanState(TestCase):
             self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
 
             # expose the knight card
-            move = CatanMove()
-            move.development_cards_to_be_exposed[DevelopmentCard.Knight] += 1
+            move = CatanMove(self.state.board.get_robber_land())
+            move.development_card_to_be_exposed = DevelopmentCard.Knight
             self.state.make_move(move)
 
         player, threshold = self.state._get_largest_army_player_and_size()
@@ -158,7 +158,7 @@ class TestCatanState(TestCase):
         self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
 
         for move in self.state.get_next_moves():
-            if move.development_cards_to_be_exposed[DevelopmentCard.Knight] != 0:
+            if move.development_card_to_be_exposed == DevelopmentCard.Knight:
                 self.assertNotEqual(robber_placement, move.robber_placement_land)
             else:
                 self.assertEqual(robber_placement, move.robber_placement_land)
@@ -180,7 +180,7 @@ class TestCatanState(TestCase):
         moves = list(filter(CatanMove.is_doing_anything, moves))
 
         # assert moves expose the development-card, and pave two roads
-        do_moves_expose_card = (m.development_cards_to_be_exposed[DevelopmentCard.RoadBuilding] == 1 for m in moves)
+        do_moves_expose_card = (m.development_card_to_be_exposed == DevelopmentCard.RoadBuilding for m in moves)
         self.assertTrue(all(do_moves_expose_card))
 
         do_moves_pave_two_roads = (len(m.paths_to_be_paved) == 2 for m in moves)
@@ -203,7 +203,7 @@ class TestCatanState(TestCase):
         self.assertListEqual(self.state.board.get_locations_colonised_by_player(self.players[0]), [])
 
         self.players[0].add_resources_and_piece_for_settlement()
-        move = CatanMove()
+        move = CatanMove(self.state.board.get_robber_land())
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
@@ -211,7 +211,7 @@ class TestCatanState(TestCase):
 
     def test_unmake_move(self):
         self.players[0].add_resources_and_piece_for_settlement()
-        move = CatanMove()
+        move = CatanMove(self.state.board.get_robber_land())
         move.locations_to_be_set_to_settlements.append(0)
         self.state.make_move(move)
 
@@ -221,10 +221,10 @@ class TestCatanState(TestCase):
 
     def test_get_current_player(self):
         self.assertEqual(self.state.get_current_player(), self.players[0])
-        self.state.make_move(CatanMove())
+        self.state.make_move(CatanMove(self.state.board.get_robber_land()))
         self.state.make_random_move()
         self.assertEqual(self.state.get_current_player(), self.players[1])
-        self.state.make_move(CatanMove())
+        self.state.make_move(CatanMove(self.state.board.get_robber_land()))
         self.state.make_random_move()
         self.assertEqual(self.state.get_current_player(), self.players[0])
 
@@ -311,7 +311,7 @@ class TestCatanState(TestCase):
         self.state.turns_count = 4
 
         # buy two knight cards
-        self.state.make_move(CatanMove())
+        self.state.make_move(CatanMove(self.state.board.get_robber_land()))
         purchase_count = 2
         two_knight_cards_expected_probability = (15 / 26) * (14 / 25)
         two_knights_counters = {card: purchase_count if card is DevelopmentCard.Knight else 0
@@ -321,12 +321,12 @@ class TestCatanState(TestCase):
                        self.state, two_knights_counters))
 
         # make empty move
-        self.state.make_move(CatanMove())
+        self.state.make_move(CatanMove(self.state.board.get_robber_land()))
         self.state.make_random_move(RandomMove(2, self.state.probabilities_by_dice_values[2], self.state))
 
         # expose one knight
         move = CatanMove(self.state.board._lands[0])
-        move.development_cards_to_be_exposed[DevelopmentCard.Knight] = 1
+        move.development_card_to_be_exposed = DevelopmentCard.Knight
         self.state.make_move(move)
         self.state.make_random_move(RandomMove(2, self.state.probabilities_by_dice_values[2], self.state))
 
@@ -356,13 +356,13 @@ class TestCatanState(TestCase):
         self.assertAlmostEqual(two_knight_cards_expected_probability, two_knight_cards_actual_probability)
 
     def test_get_all_possible_trade_moves_empty_move_no_resources(self):
-        empty_move = CatanMove()
+        empty_move = CatanMove(self.state.board.get_robber_land())
         moves = [empty_move]
         moves = self.state._get_all_possible_trade_moves(moves)
         assert moves == [empty_move]
 
     def test_get_all_possible_trade_moves_empty_move_not_enough_resources(self):
-        empty_move = CatanMove()
+        empty_move = CatanMove(self.state.board.get_robber_land())
         moves = [empty_move]
         moves = self.state._get_all_possible_trade_moves(moves)
         assert moves == [empty_move]
@@ -373,7 +373,7 @@ class TestCatanState(TestCase):
             assert moves == [empty_move]
 
     def test_get_all_possible_trade_moves_single_trade(self):
-        empty_move = CatanMove()
+        empty_move = CatanMove(self.state.board.get_robber_land())
         moves = [empty_move]
         moves = self.state._get_all_possible_trade_moves(moves)
         assert moves == [empty_move]
@@ -387,7 +387,7 @@ class TestCatanState(TestCase):
         assert len(moves) == 5
 
     def test_get_all_possible_trade_moves_different_ratio_generic(self):
-        empty_move = CatanMove()
+        empty_move = CatanMove(self.state.board.get_robber_land())
         moves = [empty_move]
         moves = self.state._get_all_possible_trade_moves(moves)
         assert moves == [empty_move]
@@ -406,7 +406,7 @@ class TestCatanState(TestCase):
         assert len(moves) == 5
 
     def test_get_all_possible_trade_moves_different_ratio_non_generic(self):
-        empty_move = CatanMove()
+        empty_move = CatanMove(self.state.board.get_robber_land())
         moves = [empty_move]
         moves = self.state._get_all_possible_trade_moves(moves)
         assert moves == [empty_move]
@@ -423,3 +423,45 @@ class TestCatanState(TestCase):
         assert len(moves[3].resources_exchanges) == 1
         assert len(moves[4].resources_exchanges) == 1
         assert len(moves) == 5
+
+    def test_get_all_possible_development_cards_exposure_moves(self):
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 39, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 40, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (39, 44), Road.Paved)
+        self.state.board.set_path(self.players[1], (40, 44), Road.Paved)
+        self.state.turns_count = 4
+
+        empty_move = CatanMove(self.state.board.get_robber_land())
+        moves = [empty_move]
+        moves = self.state._get_all_possible_development_cards_exposure_moves(moves)
+        self.assertEqual(moves, [empty_move])
+        self.players[0].add_unexposed_development_card(DevelopmentCard.RoadBuilding)
+        self.players[0].add_unexposed_development_card(DevelopmentCard.YearOfPlenty)
+        self.players[0].add_unexposed_development_card(DevelopmentCard.Monopoly)
+        self.players[0].add_unexposed_development_card(DevelopmentCard.Knight)
+        self.players[0].add_unexposed_development_card(DevelopmentCard.VictoryPoint)
+        moves = self.state._get_all_possible_development_cards_exposure_moves(moves)
+        self.assertEqual(moves[0], empty_move)
+        all_dev_cards = [move.development_card_to_be_exposed for move in moves]
+        for dev_card_type in DevelopmentCard:
+            assert dev_card_type in all_dev_cards
+        self.assertEqual(len(moves), 28)
+        knight_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.Knight]
+        self.assertEqual(len(knight_dev_applied_moves), 5)
+        y_o_p_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.YearOfPlenty]
+        self.assertEqual(len(y_o_p_dev_applied_moves), 15)
+        monopoly_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.Monopoly]
+        self.assertEqual(len(monopoly_dev_applied_moves), 5)
+
+
+
+
+
+
+
+
+

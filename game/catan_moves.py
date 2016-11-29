@@ -7,9 +7,10 @@ from players.abstract_player import AbstractPlayer
 
 
 class CatanMove(AbstractMove):
-    def __init__(self, robber_placement_land=None):
+    def __init__(self, robber_placement_land):
+        assert robber_placement_land is not None
         self.resources_exchanges = []
-        self.development_cards_to_be_exposed = defaultdict(int)
+        self.development_card_to_be_exposed = None
         self.paths_to_be_paved = {}
         self.locations_to_be_set_to_settlements = []
         self.locations_to_be_set_to_cities = []
@@ -26,7 +27,7 @@ class CatanMove(AbstractMove):
         :return: True if anything is done in this move, False otherwise
         """
         return (len(self.resources_exchanges) != 0 or
-                sum(self.development_cards_to_be_exposed.values()) != 0 or
+                self.development_card_to_be_exposed is not None or
                 len(self.paths_to_be_paved) != 0 or
                 len(self.locations_to_be_set_to_settlements) != 0 or
                 len(self.locations_to_be_set_to_cities) != 0 or
