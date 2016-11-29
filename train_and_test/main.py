@@ -21,7 +21,7 @@ def clean_previous_images():
 
 def execute_game():
     seed = 234
-    timeout_seconds = 1
+    timeout_seconds = 0.1
 
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
 
@@ -56,7 +56,6 @@ def execute_game():
 
         turn_count += 1
         robber_placement = state.board.get_robber_land()
-        dice_roll = state.current_dice_number
 
         move = state.get_current_player().choose_move(state)
         assert not scores_changed(state, previous_scores, state.get_scores_by_player())
@@ -77,7 +76,7 @@ def execute_game():
 
             image_name = 'turn_{}_scores_{}.png'.format(
                 turn_count, ''.join('{}_'.format(v) for v in previous_scores.values()))
-            state.board.plot_map(image_name, dice_roll)
+            state.board.plot_map(image_name, state.current_dice_number)
 
 
 def main():
