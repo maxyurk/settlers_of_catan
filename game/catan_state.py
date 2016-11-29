@@ -546,7 +546,7 @@ class CatanState(AbstractState):
         elif move.development_card_to_be_exposed == DevelopmentCard.Monopoly:
             assert move.monopoly_card is not None
             for other_player in self.players:
-                if other_player == player:
+                if other_player is player:
                     continue
                 resource = move.monopoly_card
                 resource_count = other_player.get_resource_count(resource)
@@ -596,7 +596,7 @@ class CatanState(AbstractState):
         elif move.development_card_to_be_exposed == DevelopmentCard.Monopoly:
             assert move.monopoly_card is not None
             for other_player in self.players:
-                if other_player == player:
+                if other_player is player:
                     continue
                 resource = move.monopoly_card
                 resource_count = move.monopoly_card_debt[other_player]

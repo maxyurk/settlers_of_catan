@@ -186,6 +186,16 @@ class TestCatanState(TestCase):
         self.assertTrue(all(do_moves_pave_two_roads))
 
     def test_on_monopoly_exposed_players_give_resource(self):
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 39, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 40, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (39, 44), Road.Paved)
+        self.state.board.set_path(self.players[1], (40, 44), Road.Paved)
+        self.state.turns_count = 4
+
         # given player 0 has monopoly dev-card, and player 1 has 1 of each resource
         self.players[0].add_unexposed_development_card(DevelopmentCard.Monopoly)
         for resource in Resource:
@@ -194,9 +204,22 @@ class TestCatanState(TestCase):
         # get all moves
         moves = self.state.get_next_moves()
 
+        # assert correct amount of moves and resources
+        self.assertEqual(len(moves), len(Resource) + 1)
+        self.assertEqual(self.players[0].get_resource_count(Resource(0)), 0)
+        self.assertEqual(self.players[1].get_resource_count(Resource(0)), 1)
+
+        # apply a move that uses monopoly card
+        self.state.make_move(moves[1])
+        self.state.make_random_move(RandomMove(7, 0.1, self.state))
+
+        # assert cards were taken
+        self.assertEqual(self.players[0].get_resource_count(Resource(0)), 1)
+        self.assertEqual(self.players[1].get_resource_count(Resource(0)), 0)
+
+
         # remove the empty move
-        moves = list(filter(CatanMove.is_doing_anything, moves))
-        # TODO finish this test when all dev-cards are implemented properly
+
 
     def test_make_move(self):
         self.assertListEqual(self.state.board.get_locations_colonised_by_player(self.players[0]), [])

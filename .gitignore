@@ -172,3 +172,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 train_and_test/turn_*
+train_and_test/results_*
