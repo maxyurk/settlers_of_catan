@@ -92,7 +92,8 @@ class CatanState(AbstractState):
             empty_move = CatanMove()
             moves = [empty_move]
         else:
-            moves = [CatanMove(land) for land in self.board.get_lands_to_place_robber_on()]
+            other_players = [player for player in self.players if not self.get_current_player() is player]
+            moves = [CatanMove(land) for land in self.board.get_lands_to_place_robber_on(other_players)]
         moves = self._get_all_possible_development_cards_exposure_moves(moves)
         # _get_all_possible_trade_moves is assuming it's after dev_cards moves and nothing else
         moves = self._get_all_possible_trade_moves(moves)
@@ -338,7 +339,8 @@ class CatanState(AbstractState):
                             move.robber_placement_land != self.board.get_robber_land():
                 non_knight_applied_moves.append(move)
                 continue
-            for land in self.board.get_lands_to_place_robber_on():
+            other_players = [player for player in self.players if not self.get_current_player() is player]
+            for land in self.board.get_lands_to_place_robber_on(other_players):
                 new_move = copy.deepcopy(move)
                 new_move.robber_placement_land = land
                 knight_applied_moves.append(new_move)
