@@ -19,6 +19,7 @@ class CatanMove(AbstractMove):
         self.did_get_longest_road_card = False
         self.robber_placement_land = robber_placement_land
         self.monopoly_card = None
+        self.monopoly_card_debt = {}
         self.resources_updates = {}
 
     def is_doing_anything(self):

@@ -248,9 +248,9 @@ class TestCatanState(TestCase):
 
     def test_unthrow_dice(self):
         self.state.board.set_location(self.players[0], 0, Colony.Settlement)
-        self.state.board.set_location(self.players[0], 1, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 29, Colony.Settlement)
         self.state.board.set_path(self.players[0], (0, 4), Road.Paved)
-        self.state.board.set_path(self.players[0], (4, 1), Road.Paved)
+        self.state.board.set_path(self.players[0], (29, 35), Road.Paved)
         self.state.board.set_location(self.players[1], 50, Colony.Settlement)
         self.state.board.set_location(self.players[1], 42, Colony.Settlement)
         self.state.board.set_path(self.players[1], (50, 46), Road.Paved)

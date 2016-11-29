@@ -141,7 +141,7 @@ class CatanState(AbstractState):
                     RandomMove(dice_value, dice_probability * purchase_probability, self, purchase_option))
         return random_moves
 
-    def make_random_move(self, random_move: RandomMove=None):
+    def make_random_move(self, random_move: RandomMove = None):
         if random_move is None:
             rolled_dice_value = self._random_choice(a=list(self.probabilities_by_dice_values.keys()),
                                                     p=list(self.probabilities_by_dice_values.values()))
@@ -202,7 +202,7 @@ class CatanState(AbstractState):
         if move.did_get_largest_army_card:
             self._player_with_largest_army.pop()
 
-    def _get_longest_road_player_and_length(self) -> Tuple[AbstractPlayer, int]:
+    def _get_longest_road_player_and_length(self) -> Tuple[None, int]:
         """
         get player with longest road, and longest road length.
         if No one crossed the 5 roads threshold yet(which means the stack is empty),
@@ -254,7 +254,9 @@ class CatanState(AbstractState):
             max_num_of_trades = (int(player.get_resource_count(source_resource) /
                                      self._calc_curr_player_trade_ratio(source_resource)))
             for i in range(1, max_num_of_trades + 1):
-                no_dev_card_side_effect_trades += self._trade_options_with_i_trades_and_min_resource_index(i, source_resource, FirsResourceIndex)
+                no_dev_card_side_effect_trades += self._trade_options_with_i_trades_and_min_resource_index(i,
+                                                                                                           source_resource,
+                                                                                                           FirsResourceIndex)
 
         for move in moves:
             # assuming it's after dev_cards moves and nothing else (bad programming but better performance)
@@ -490,7 +492,7 @@ class CatanState(AbstractState):
         for move in moves:
             self._pretend_to_make_a_move(move)
             if (player.has_resources_for_development_card() and
-                    len(self._dev_cards) > move.development_cards_to_be_purchased_count):
+                        len(self._dev_cards) > move.development_cards_to_be_purchased_count):
                 new_move = copy.deepcopy(move)
                 new_move.development_cards_to_be_purchased_count += 1
                 new_moves.append(new_move)
@@ -501,9 +503,9 @@ class CatanState(AbstractState):
 
     def _get_all_possible_development_cards_purchase_options(
             self, cards_to_purchase_count: int,
-            development_cards: List[DevelopmentCard]=[c for c in DevelopmentCard],
-            purchased_cards: Dict[DevelopmentCard, int]={cc: 0 for cc in DevelopmentCard},
-            probability: float=1.0) -> List[PurchaseOption]:
+            development_cards: List[DevelopmentCard] = [c for c in DevelopmentCard],
+            purchased_cards: Dict[DevelopmentCard, int] = {cc: 0 for cc in DevelopmentCard},
+            probability: float = 1.0) -> List[PurchaseOption]:
 
         if cards_to_purchase_count == 0:
             return [PurchaseOption(copy.deepcopy(purchased_cards), probability)]
@@ -541,6 +543,16 @@ class CatanState(AbstractState):
         move.robber_placement_land = previous_robber_land_placement
         if move.development_card_to_be_exposed == DevelopmentCard.RoadBuilding:
             self._apply_road_building_dev_card_side_effect(1)
+        elif move.development_card_to_be_exposed == DevelopmentCard.Monopoly:
+            assert move.monopoly_card is not None
+            for other_player in self.players:
+                if other_player == player:
+                    continue
+                resource = move.monopoly_card
+                resource_count = other_player.get_resource_count(resource)
+                move.monopoly_card_debt[other_player] = resource_count
+                other_player.remove_resource(resource, resource_count)
+                player.add_resource(resource, resource_count)
         if move.development_card_to_be_exposed is not None:
             player.expose_development_card(move.development_card_to_be_exposed)
             self._unexposed_dev_cards_counters[move.development_card_to_be_exposed] -= 1
@@ -581,6 +593,15 @@ class CatanState(AbstractState):
             self._unexposed_dev_cards_counters[move.development_card_to_be_exposed] += 1
         if move.development_card_to_be_exposed == DevelopmentCard.RoadBuilding:
             self._revert_road_building_dev_card_side_effect(1)
+        elif move.development_card_to_be_exposed == DevelopmentCard.Monopoly:
+            assert move.monopoly_card is not None
+            for other_player in self.players:
+                if other_player == player:
+                    continue
+                resource = move.monopoly_card
+                resource_count = move.monopoly_card_debt[other_player]
+                other_player.add_resource(resource, resource_count)
+                player.remove_resource(resource, resource_count)
         robber_land_placement_to_undo = self.board.get_robber_land()  # this is done just in case, probably redundant
         self.board.set_robber_land(move.robber_placement_land)
         move.robber_placement_land = robber_land_placement_to_undo  # this is done just in case, probably redundant
