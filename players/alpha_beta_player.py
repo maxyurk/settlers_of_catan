@@ -67,7 +67,7 @@ class AlphaBetaPlayer(AbstractPlayer):
             return RandomPlayer.choose_resources_to_drop(self)
 
         for resource in Resource:
-            while resources_to_drop_count != sum(resources_to_drop.values()) and self.resources[Resource] > 0:
+            while resources_to_drop_count != sum(resources_to_drop.values()) and self.resources[resource] > 0:
                 self.remove_resource(resource)
         return resources_to_drop
 
