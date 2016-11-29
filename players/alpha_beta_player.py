@@ -1,4 +1,5 @@
 import copy
+from collections import Counter
 from math import ceil
 from typing import Dict, Callable, List
 
@@ -40,6 +41,8 @@ class AlphaBetaPlayer(AbstractPlayer):
             return RandomPlayer.choose_move(self, state)
 
     def choose_resources_to_drop(self) -> Dict[Resource, int]:
+        if sum(self.resources.values()) < 8:
+            return {}
         resources_count = sum(self.resources.values())
         resources_to_drop_count = ceil(resources_count / 2)
         if self.can_settle_city() and resources_count >= sum(ResourceAmounts.city.values()) * 2:
@@ -66,10 +69,8 @@ class AlphaBetaPlayer(AbstractPlayer):
         else:
             return RandomPlayer.choose_resources_to_drop(self)
 
-        for resource in Resource:
-            while resources_to_drop_count != sum(resources_to_drop.values()) and self.resources[resource] > 0:
-                self.remove_resource(resource)
-        return resources_to_drop
+        resources_to_drop = [resource for resource, count in resources_to_drop.items() for _ in range(count)]
+        return Counter(self._random_choice(resources_to_drop, resources_to_drop_count, replace=False))
 
     def set_heuristic(self, evaluate_heuristic_value: Callable[[AbstractState], float]):
         """
