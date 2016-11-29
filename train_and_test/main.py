@@ -20,10 +20,8 @@ def clean_previous_images():
 
 
 def execute_game():
-    seed = None
-    timeout_seconds = 0.001
-
-    p1 = AlphaBetaPlayer(seed, timeout_seconds)
+    seed = 121
+    timeout_seconds = 3
 
     def h(s: CatanState):
         score = 0
@@ -40,11 +38,13 @@ def execute_game():
                     score += s.probabilities_by_dice_values[dice_value] * factor * sign
         return score
 
+    p1 = AlphaBetaPlayer(seed, timeout_seconds)
     p1.set_heuristic(h)
     p2 = AlphaBetaPlayer(seed, timeout_seconds)
     p3 = RandomPlayer(seed)
-    # p2 = RandomPlayer(seed)
-    players = [p1, p2, p3]
+    p4 = RandomPlayer(seed)
+    players = [p1, p2, p3, p4]
+
     state = CatanState(players, seed)
 
     clean_previous_images()
@@ -88,9 +88,8 @@ def execute_game():
     fileLogger.info('|'.join(' {} : {} '.format(name, score) for name, score in players_scores_by_names.items()))
 
 
-
 def main():
-    for _ in range(3):
+    for _ in range(5):
         execute_game()
 
 if __name__ == '__main__':

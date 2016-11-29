@@ -534,13 +534,15 @@ class Board:
                            .replace('<', '').replace('>', '').replace("'", '').replace('Knight: 0', 'Knight')
                            .replace('RoadBuilding: 2', 'Road Building').replace('VictoryPoint: 1', 'Victory Point')
                            .replace('Monopoly: 3', 'Monopoly').replace('YearOfPlenty: 4', 'Year Of Plenty')
-                           .replace('Resource.', '').replace('Colony.', '').replace('.Paved', ''))
+                           .replace('Resource.', '').replace('Colony.', '').replace('.Paved', '')
+                           .replace('Road: 1', 'Road'))
 
-        if dice is not None:
-            blocks.append('rolled:\\n{}'.format(dice))
-        g.add_node('game_data_{}'.format(id(v)), shape='record', label='|'.join(blocks),
+        blocks.append('rolled:\\n{}'.format(dice))
+        g.add_node('game_data', shape='record', label='|'.join(blocks),
                    fontsize=20, fontname='times-bold')
-
+        g.add_edge('game_data', 26)
+        g.get_edge('game_data', 26).attr['len'] = 8
+        g.get_edge('game_data', 26).attr['color'] = 'transparent'
         g.layout()
         g.draw(file_name)
 
