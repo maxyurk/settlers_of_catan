@@ -1,12 +1,11 @@
-from itertools import combinations_with_replacement, combinations, chain
+from itertools import combinations_with_replacement, combinations
 from math import ceil
 from unittest import TestCase
 
-
 from algorithms.abstract_state import AbstractState
 from game.board import Resource, Harbor
-from game.catan_state import CatanState, PurchaseOption
 from game.catan_moves import CatanMove, RandomMove
+from game.catan_state import CatanState
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
 from players.abstract_player import AbstractPlayer
@@ -457,11 +456,37 @@ class TestCatanState(TestCase):
         monopoly_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.Monopoly]
         self.assertEqual(len(monopoly_dev_applied_moves), 5)
 
+    def test_get_all_possible_path_moves(self):
+        self.state.board.set_location(self.players[0], 0, Colony.Settlement)
+        self.state.board.set_location(self.players[0], 7, Colony.Settlement)
+        self.state.board.set_path(self.players[0], (3, 0), Road.Paved)
+        self.state.board.set_path(self.players[0], (3, 7), Road.Paved)
+        self.state.board.set_location(self.players[1], 39, Colony.Settlement)
+        self.state.board.set_location(self.players[1], 40, Colony.Settlement)
+        self.state.board.set_path(self.players[1], (39, 44), Road.Paved)
+        self.state.board.set_path(self.players[1], (40, 44), Road.Paved)
+        self.state.turns_count = 4
 
+        empty_move = CatanMove(self.state.board.get_robber_land())
+        moves = [empty_move]
+        moves = self.state._get_all_possible_paths_moves(moves)
+        self.assertEqual(moves, [empty_move])
+        self.players[0].add_resource(Resource.Lumber)
+        self.players[0].add_resource(Resource.Brick)
 
+        # First player
+        moves = [empty_move]
+        moves = self.state._get_all_possible_paths_moves(moves)
+        self.assertEqual(len(moves), 4)
 
+        # move to next player
+        self.state.make_move(empty_move)
+        self.state.make_random_move(RandomMove(2, 0.1, self.state))
 
+        self.players[1].add_resource(Resource.Lumber)
+        self.players[1].add_resource(Resource.Brick)
 
-
-
-
+        # Second player
+        moves = [empty_move]
+        moves = self.state._get_all_possible_paths_moves(moves)
+        self.assertEqual(len(moves), 6)
