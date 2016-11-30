@@ -5,7 +5,6 @@ from typing import Dict, Callable, List
 
 from algorithms.abstract_state import AbstractState, AbstractMove
 from algorithms.alpha_beta_pruning_expectimax import AlphaBetaExpectimax
-from game.board import ResourceAmounts
 from game.catan_state import CatanState
 from game.resource import Resource, ResourceAmounts
 from players.abstract_player import AbstractPlayer

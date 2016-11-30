@@ -7,7 +7,7 @@ from typing import List, Tuple, Dict
 import numpy as np
 
 from algorithms.abstract_state import AbstractState
-from game.board import Board, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts, Location, Path
+from game.board import Board, Harbor, Location, Path
 from game.catan_moves import CatanMove, RandomMove
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
