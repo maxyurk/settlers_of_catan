@@ -25,7 +25,7 @@ def execute_game():
 
     def h(s: CatanState):
         score = 0
-        for player, sign in [(p1, 1), (p2, -1)]:
+        for player, sign in [(p0, 1), (p1, -1)]:
             locations = s.board.get_locations_colonised_by_player(player)
             for location in locations:
                 factor = s.board.get_colony_type_at_location(location).value
@@ -38,12 +38,12 @@ def execute_game():
                     score += s.probabilities_by_dice_values[dice_value] * factor * sign
         return score
 
+    p0 = AlphaBetaPlayer(seed, timeout_seconds)
+    p0.set_heuristic(h)
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
-    p1.set_heuristic(h)
-    p2 = AlphaBetaPlayer(seed, timeout_seconds)
+    p2 = RandomPlayer(seed)
     p3 = RandomPlayer(seed)
-    p4 = RandomPlayer(seed)
-    players = [p1, p2, p3, p4]
+    players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
 
@@ -85,9 +85,8 @@ def execute_game():
          if isinstance(v, AlphaBetaPlayer) else None): previous_scores[v]
         for k, v in locals().items() if v in players
         }
-    fileLogger.info('{}\n----------------------------------------------------------------------------------------------'
-                    '------------'.format('\n'.join(' {:100} : {} '.format(str(name), score)
-                                                    for name, score in players_scores_by_names.items())))
+    fileLogger.info('\n'.join(' {:100} : {} '.format(str(name), score) for name, score
+                              in players_scores_by_names.items()) + '\n' + '-' * 106 + '\n')
 
 
 def main():
