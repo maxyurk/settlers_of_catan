@@ -1,6 +1,7 @@
 import os
 
 from game.catan_state import CatanState
+from players.alpha_beta_monte_carlo_player import AlphaBetaMonteCarloPlayer
 from players.alpha_beta_player import AlphaBetaPlayer
 from players.random_player import RandomPlayer
 from train_and_test.logger import logger, fileLogger
@@ -42,7 +43,7 @@ def execute_game():
     p0.set_heuristic(h)
     p1 = AlphaBetaPlayer(seed, timeout_seconds)
     p2 = RandomPlayer(seed)
-    p3 = RandomPlayer(seed)
+    p3 = RandomPlayer(seed)  # AlphaBetaMonteCarloPlayer(seed, timeout_seconds)
     players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
@@ -55,6 +56,7 @@ def execute_game():
                          .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
 
     while not state.is_final():
+        # noinspection PyProtectedMember
         logger.info('----------------------p{}\'s turn----------------------'.format(state._current_player_index))
 
         turn_count += 1
@@ -70,15 +72,15 @@ def execute_game():
         if score_changed:
             previous_scores = current_scores
 
-            scores = ''.join('{} '.format(v) for v in previous_scores.values())
-            move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
-                         (k == 'robber_placement_land' and v == robber_placement) and not
-                         (isinstance(v, dict) and sum(v.values()) == 0)}
-            logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
+        scores = ''.join('{} '.format(v) for v in previous_scores.values())
+        move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
+                     (k == 'robber_placement_land' and v == robber_placement) and not
+                     (isinstance(v, dict) and sum(v.values()) == 0)}
+        logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
 
-            image_name = 'turn_{}_scores_{}.png'.format(
-                turn_count, ''.join('{}_'.format(v) for v in previous_scores.values()))
-            state.board.plot_map(image_name, state.current_dice_number)
+        image_name = 'turn_{}_scores_{}.png'.format(
+            turn_count, ''.join('{}_'.format(v) for v in previous_scores.values()))
+        state.board.plot_map(image_name, state.current_dice_number)
 
     players_scores_by_names = {
         (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
