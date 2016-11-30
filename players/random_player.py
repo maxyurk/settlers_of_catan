@@ -3,7 +3,7 @@ from math import ceil
 from typing import Dict
 
 from algorithms.abstract_state import AbstractState
-from game.board import Resource
+from game.resource import Resource
 from players.abstract_player import AbstractPlayer
 
 

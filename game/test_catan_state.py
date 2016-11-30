@@ -3,11 +3,12 @@ from math import ceil
 from unittest import TestCase
 
 from algorithms.abstract_state import AbstractState
-from game.board import Resource, Harbor
+from game.board import Harbor
 from game.catan_moves import CatanMove, RandomMove
 from game.catan_state import CatanState
 from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
+from game.resource import Resource
 from players.abstract_player import AbstractPlayer
 
 

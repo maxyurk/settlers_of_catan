@@ -4,9 +4,9 @@ from typing import Dict
 import numpy as np
 
 from algorithms.abstract_state import AbstractState, AbstractMove
-from game.board import Resource
 from game.development_cards import DevelopmentCard
 from game.pieces import *
+from game.resource import Resource
 
 
 class AbstractPlayer(abc.ABC):
