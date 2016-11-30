@@ -14,14 +14,14 @@ def scores_changed(state, previous_scores, scores):
 
 
 def clean_previous_images():
-    for file_name in os.listdir():
+    for file_name in os.listdir(path='.'):
         if file_name.split(sep='_')[0] == 'turn':
             os.remove(file_name)
 
 
 def execute_game():
     seed = 121
-    timeout_seconds = 0.03
+    timeout_seconds = 0.000005
 
     def h(s: CatanState):
         score = 0
@@ -53,6 +53,7 @@ def execute_game():
     previous_scores = state.get_scores_by_player()
     state.board.plot_map('turn_{}_scores_{}.png'
                          .format(turn_count, ''.join('{}_'.format(v) for v in previous_scores.values())))
+
     while not state.is_final():
         logger.info('----------------------p{}\'s turn----------------------'.format(state._current_player_index))
 
@@ -69,7 +70,6 @@ def execute_game():
         if score_changed:
             previous_scores = current_scores
 
-        if max(previous_scores.values()) >= 10 or True:
             scores = ''.join('{} '.format(v) for v in previous_scores.values())
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
                          (k == 'robber_placement_land' and v == robber_placement) and not
@@ -85,7 +85,9 @@ def execute_game():
          if isinstance(v, AlphaBetaPlayer) else None): previous_scores[v]
         for k, v in locals().items() if v in players
         }
-    fileLogger.info('|'.join(' {} : {} '.format(name, score) for name, score in players_scores_by_names.items()))
+    fileLogger.info('{}\n----------------------------------------------------------------------------------------------'
+                    '------------'.format('\n'.join(' {:100} : {} '.format(str(name), score)
+                                                    for name, score in players_scores_by_names.items())))
 
 
 def main():

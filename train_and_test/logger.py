@@ -1,5 +1,4 @@
 import logging
-
 import time
 
 
@@ -13,4 +12,4 @@ logger = logging.getLogger()
 logger.addFilter(ScorePrintingFilter())
 
 fileLogger = logging.getLogger('file logger')
-fileLogger.addHandler(logging.FileHandler('results_{}.txt'.format(time.time())))
+fileLogger.addHandler(logging.FileHandler('results_{:.3f}.txt'.format(time.time())))
