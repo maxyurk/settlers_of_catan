@@ -471,9 +471,9 @@ class TestCatanState(TestCase):
         all_dev_cards = [move.development_card_to_be_exposed for move in moves]
         for dev_card_type in DevelopmentCard:
             assert dev_card_type in all_dev_cards
-        self.assertEqual(len(moves), 28)
+        self.assertEqual(len(moves), 41)
         knight_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.Knight]
-        self.assertEqual(len(knight_dev_applied_moves), 5)
+        self.assertEqual(len(knight_dev_applied_moves), 18)
         y_o_p_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.YearOfPlenty]
         self.assertEqual(len(y_o_p_dev_applied_moves), 15)
         monopoly_dev_applied_moves = [move for move in moves if move.development_card_to_be_exposed == DevelopmentCard.Monopoly]

@@ -583,21 +583,8 @@ class Board:
                 return True
         return False
 
-    def get_lands_to_place_robber_on(self, players=set()) -> List[Land]:
-        if len(players) == 0:
-            def good_robber_placement(land):
-                return len(land.colonies) != 0
-        else:
-            def good_robber_placement(land):
-                for player in players:
-                    for location in land.locations:
-                        if self.is_colonised_by(player, location):
-                            return True
-                return False
-
-        return [land for land in self._lands
-                if land.identifier != self._robber_land.identifier
-                and (good_robber_placement(land) or land.resource is None)]
+    def get_lands_to_place_robber_on(self) -> List[Land]:
+        return [land for land in self._lands if land.identifier != self._robber_land.identifier]
 
     _vertices_rows = [
         [i for i in range(0, 3)],

@@ -1,15 +1,15 @@
 import copy
-from collections import defaultdict, Set
+from collections import defaultdict
 from collections import namedtuple
-from typing import List, Tuple, Dict
 from itertools import combinations_with_replacement
+from typing import List, Tuple, Dict
 
 import numpy as np
 
 from algorithms.abstract_state import AbstractState
 from game.board import Board, Resource, Harbor, FirsResourceIndex, LastResourceIndex, ResourceAmounts, Location, Path
 from game.catan_moves import CatanMove, RandomMove
-from game.development_cards import DevelopmentCard, LastDevCardIndex, FirstDevCardIndex
+from game.development_cards import DevelopmentCard
 from game.pieces import Colony, Road
 from players.abstract_player import AbstractPlayer
 
@@ -93,8 +93,7 @@ class CatanState(AbstractState):
             empty_move = CatanMove(self.board.get_robber_land())
             moves = [empty_move]
         else:
-            other_players = [player for player in self.players if not self.get_current_player() is player]
-            moves = [CatanMove(land) for land in self.board.get_lands_to_place_robber_on(other_players)]
+            moves = [CatanMove(land) for land in self.board.get_lands_to_place_robber_on()]
         moves = self._get_all_possible_development_cards_exposure_moves(moves)
         # _get_all_possible_trade_moves is assuming it's after dev_cards moves and nothing else
         moves = self._get_all_possible_trade_moves(moves)
@@ -343,8 +342,7 @@ class CatanState(AbstractState):
                             move.robber_placement_land != self.board.get_robber_land():
                 non_knight_applied_moves.append(move)
                 continue
-            other_players = [player for player in self.players if not self.get_current_player() is player]
-            for land in self.board.get_lands_to_place_robber_on(other_players):
+            for land in self.board.get_lands_to_place_robber_on():
                 new_move = copy.deepcopy(move)
                 new_move.robber_placement_land = land
                 knight_applied_moves.append(new_move)
