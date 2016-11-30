@@ -21,7 +21,7 @@ def clean_previous_images():
 
 def execute_game():
     seed = 121
-    timeout_seconds = 3
+    timeout_seconds = 0.03
 
     def h(s: CatanState):
         score = 0
@@ -69,7 +69,7 @@ def execute_game():
         if score_changed:
             previous_scores = current_scores
 
-        if max(previous_scores.values()) >= 10:
+        if max(previous_scores.values()) >= 10 or True:
             scores = ''.join('{} '.format(v) for v in previous_scores.values())
             move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
                          (k == 'robber_placement_land' and v == robber_placement) and not

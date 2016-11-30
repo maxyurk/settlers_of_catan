@@ -13,18 +13,23 @@ from train_and_test.logger import logger
 
 
 class AlphaBetaPlayer(AbstractPlayer):
-    def __init__(self, seed=None, timeout_seconds=5):
+
+    def default_heuristic(self, state):
+        return float(state.get_scores_by_player()[self])
+
+    def __init__(self, seed=None, timeout_seconds=5, heuristic=None, filter_moves=lambda x: x):
         assert seed is None or (isinstance(seed, int) and seed > 0)
 
         super().__init__(seed, timeout_seconds)
 
-        def default_heuristic_function(state):
-            return float(state.get_scores_by_player()[self])
+        if heuristic is None:
+            heuristic = self.default_heuristic
 
         self.expectimax_alpha_beta = AlphaBetaExpectimax(
             is_maximizing_player=lambda p: p is self,
-            evaluate_heuristic_value=default_heuristic_function,
-            timeout_seconds=timeout_seconds)
+            evaluate_heuristic_value=heuristic,
+            timeout_seconds=timeout_seconds,
+            filter_moves=filter_moves)
 
     def choose_move(self, state: CatanState):
         self.expectimax_alpha_beta.start_turn_timer()
