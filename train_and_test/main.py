@@ -22,7 +22,7 @@ def clean_previous_images():
 
 def execute_game():
     seed = 121
-    timeout_seconds = 0.000005
+    timeout_seconds = 5
 
     def h(s: CatanState):
         score = 0
@@ -39,12 +39,14 @@ def execute_game():
                     score += s.probabilities_by_dice_values[dice_value] * factor * sign
         return score
 
-    p0 = AlphaBetaPlayer(seed, timeout_seconds)
-    p0.set_heuristic(h)
-    p1 = AlphaBetaPlayer(seed, timeout_seconds)
-    p2 = RandomPlayer(seed)
-    p3 = RandomPlayer(seed)  # AlphaBetaMonteCarloPlayer(seed, timeout_seconds)
-    players = [p0, p1, p2, p3]
+    # p0 = AlphaBetaPlayer(seed, timeout_seconds)
+    # p0.set_heuristic(h)
+    # p1 = AlphaBetaPlayer(seed, timeout_seconds)
+    # p2 = RandomPlayer(seed)
+    # p3 = RandomPlayer(seed)  # AlphaBetaMonteCarloPlayer(seed, timeout_seconds)
+    p0 = AlphaBetaMonteCarloPlayer(seed, timeout_seconds, h, 10)
+    p1 = RandomPlayer(seed)
+    players = [p0, p1]  # , p2, p3]
 
     state = CatanState(players, seed)
 

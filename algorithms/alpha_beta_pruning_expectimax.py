@@ -76,7 +76,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
         elif self._is_maximizing_player(self.state.get_current_player()):
             v = -math.inf
             best_move = None
-            for move in self.filter_moves(self.state.get_next_moves()):
+            for move in self.filter_moves(self.state.get_next_moves(), self.state):
                 self.state.pretend_to_make_a_move(move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
                 if u > v:
