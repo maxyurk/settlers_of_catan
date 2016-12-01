@@ -2,7 +2,7 @@ import copy
 from collections import defaultdict
 from collections import namedtuple
 from itertools import combinations_with_replacement
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 
 import numpy as np
 
@@ -50,9 +50,9 @@ class CatanState(AbstractState):
 
         self.probabilities_by_dice_values = {}
         for i, p in zip(range(2, 7), range(1, 6)):
-            self.probabilities_by_dice_values[i] = p / 36
-            self.probabilities_by_dice_values[14 - i] = p / 36
-        self.probabilities_by_dice_values[7] = 6 / 36
+            self.probabilities_by_dice_values[i] = p / 36.0
+            self.probabilities_by_dice_values[14 - i] = p / 36.0
+        self.probabilities_by_dice_values[7] = 6 / 36.0
 
         self._unexposed_dev_cards_counters = {card: DevelopmentCard.get_occurrences_in_deck_count(card)
                                               for card in DevelopmentCard}
@@ -214,7 +214,7 @@ class CatanState(AbstractState):
             return None, 4
         return self._player_with_longest_road[-1]
 
-    def _get_largest_army_player_and_size(self) -> Tuple[AbstractPlayer, KnightCardsCount]:
+    def _get_largest_army_player_and_size(self) -> Tuple[Union[AbstractPlayer, None], KnightCardsCount]:
         """
         get player with largest army, and largest army size.
         if No one crossed the 2 knights threshold yet(which means the stack is empty),
@@ -522,7 +522,7 @@ class CatanState(AbstractState):
             cards_to_purchase_count, development_cards[1:], purchased_cards, probability)
 
         cards_left = sum(self._unexposed_dev_cards_counters[card] for card in DevelopmentCard)
-        probability = probability * self._unexposed_dev_cards_counters[card] / cards_left
+        probability = probability * self._unexposed_dev_cards_counters[card] / float(cards_left)
         purchased_cards[card] += 1
         self._unexposed_dev_cards_counters[card] -= 1
         with_card = self._get_all_possible_development_cards_purchase_options(
@@ -533,8 +533,6 @@ class CatanState(AbstractState):
         return with_card + without_card
 
     def _pretend_to_make_a_move(self, move: CatanMove):
-        if move.robber_placement_land is None:
-            move.robber_placement_land = self.board.get_robber_land()
         player = self.get_current_player()
         player.update_resources(move.resources_updates, AbstractPlayer.add_resource)
         previous_robber_land_placement = self.board.get_robber_land()
