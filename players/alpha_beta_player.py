@@ -14,7 +14,9 @@ from train_and_test.logger import logger
 
 class AlphaBetaPlayer(AbstractPlayer):
 
-    def default_heuristic(self, state):
+    def default_heuristic(self, state: CatanState):
+        if state.is_initialisation_phase():
+            return self._random_choice([i for i in range(10)])
         return float(state.get_scores_by_player()[self])
 
     def __init__(self, seed=None, timeout_seconds=5, heuristic=None, filter_moves=lambda x, y: x):
