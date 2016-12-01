@@ -11,12 +11,15 @@ class AlphaBetaWeightedProbabilitiesPlayer(AlphaBetaPlayer):
     def __init__(self, seed=None, timeout_seconds=5, weights=default_weights):
         super().__init__(seed, timeout_seconds, self.weighted_probabilities_heuristic)
         self.weights = weights
+        self._players_and_factors = None
 
     def weighted_probabilities_heuristic(self, s: CatanState):
+        if self._players_and_factors is None:
+            self._players_and_factors = [(self, len(s.players) - 1)] + [(p, -1) for p in s.players if p is not self]
+
         score = 0
-
-        for player, factor in [(self, len(s.players) - 1)] + [(p, -1) for p in s.players if p is not self]:
-
+        # noinspection PyTypeChecker
+        for player, factor in self._players_and_factors:
             for location in s.board.get_locations_colonised_by_player(player):
                 weight = self.weights[s.board.get_colony_type_at_location(location)]
                 for dice_value in s.board.get_surrounding_dice_values(location):
