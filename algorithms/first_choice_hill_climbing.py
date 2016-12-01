@@ -8,9 +8,8 @@ AbstractHillClimbingStateEvaluation = Any
 
 class AbstractHillClimbableSpace(ABC):
 
-    @staticmethod
     @abstractmethod
-    def get_neighbors(state: AbstractHillClimbingState) -> Iterable[AbstractHillClimbingState]:
+    def get_neighbors(self, state: AbstractHillClimbingState) -> Iterable[AbstractHillClimbingState]:
         """
         get an iterable of neighbors of current state
         :param state: current state
@@ -18,9 +17,8 @@ class AbstractHillClimbableSpace(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
     @abstractmethod
-    def evaluate_state(state: AbstractHillClimbingState) -> AbstractHillClimbingStateEvaluation:
+    def evaluate_state(self, state: AbstractHillClimbingState) -> AbstractHillClimbingStateEvaluation:
         """
         return someththat evaluates the given state. this is used to compare this state to others
         :param state: state to evaluate
@@ -35,9 +33,8 @@ class AbstractHillClimbableSpace(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
     @abstractmethod
-    def is_better(first: AbstractHillClimbingStateEvaluation, second: AbstractHillClimbingStateEvaluation) -> bool:
+    def is_better(self, first: AbstractHillClimbingStateEvaluation, second: AbstractHillClimbingStateEvaluation) -> bool:
         """
         :param first: first evaluation
         :param second: second evaluation

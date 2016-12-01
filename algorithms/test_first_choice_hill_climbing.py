@@ -4,10 +4,6 @@ from algorithms.first_choice_hill_climbing import AbstractHillClimbableSpace, fi
 
 
 class FakeHillClimbableSpace(AbstractHillClimbableSpace):
-    @staticmethod
-    def is_better(first: int, second: int) -> bool:
-        return first > second
-
     def __init__(self):
         self.iterations_count = 0
 
@@ -15,16 +11,17 @@ class FakeHillClimbableSpace(AbstractHillClimbableSpace):
         self.iterations_count += 1
         return self.iterations_count >= 10
 
-    @staticmethod
-    def get_neighbors(state: int):
+    def get_neighbors(self, state: int):
         for i in range(1, 4):
             yield i + state
 
-    @staticmethod
-    def evaluate_state(state: int) -> int:
+    def evaluate_state(self, state: int) -> int:
         if state == 2:
             return 10000
         return state
+
+    def is_better(self, first: int, second: int) -> bool:
+        return first > second
 
 
 class TestFirstChoiceHillClimbing(TestCase):
