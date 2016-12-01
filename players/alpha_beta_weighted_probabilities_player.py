@@ -30,5 +30,4 @@ class AlphaBetaWeightedProbabilitiesPlayer(AlphaBetaPlayer):
             for development_card in {DevelopmentCard.VictoryPoint, DevelopmentCard.Knight}:
                 weight = self.weights[development_card]
                 score += self.get_unexposed_development_cards()[development_card] * weight * sign
-
         return score
