@@ -90,7 +90,7 @@ class AlphaBetaExpectimax(TimeoutableAlgorithm):
             return v, best_move
         else:
             v = math.inf
-            for move in self.filter_moves(self.state.get_next_moves()):
+            for move in self.filter_moves(self.state.get_next_moves(), self.state):
                 self.state.pretend_to_make_a_move(move)
                 u, _ = self._alpha_beta_expectimax(depth - 1, alpha, beta, True)
                 v = min(v, u)
