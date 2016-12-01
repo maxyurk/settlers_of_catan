@@ -15,19 +15,19 @@ class AlphaBetaWeightedProbabilitiesPlayer(AlphaBetaPlayer):
     def weighted_probabilities_heuristic(self, s: CatanState):
         score = 0
 
-        for player, sign in [(self, 1)] + [(player, -1) for player in s.players if player is not self]:
+        for player, factor in [(self, len(s.players) - 1)] + [(p, -1) for p in s.players if p is not self]:
 
             for location in s.board.get_locations_colonised_by_player(player):
                 weight = self.weights[s.board.get_colony_type_at_location(location)]
                 for dice_value in s.board.get_surrounding_dice_values(location):
-                    score += s.probabilities_by_dice_values[dice_value] * weight * sign
+                    score += s.probabilities_by_dice_values[dice_value] * weight * factor
 
             for road in s.board.get_roads_paved_by_player(player):
                 weight = self.weights[Road.Paved]
                 for dice_value in s.board.get_adjacent_to_path_dice_values(road):
-                    score += s.probabilities_by_dice_values[dice_value] * weight * sign
+                    score += s.probabilities_by_dice_values[dice_value] * weight * factor
 
             for development_card in {DevelopmentCard.VictoryPoint, DevelopmentCard.Knight}:
                 weight = self.weights[development_card]
-                score += self.get_unexposed_development_cards()[development_card] * weight * sign
+                score += self.get_unexposed_development_cards()[development_card] * weight * factor
         return score

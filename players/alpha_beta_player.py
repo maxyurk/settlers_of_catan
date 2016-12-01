@@ -17,6 +17,8 @@ class AlphaBetaPlayer(AbstractPlayer):
     def default_heuristic(self, state: CatanState):
         if state.is_initialisation_phase():
             return self._random_choice([i for i in range(10)])
+        # as discussed with Shaul, this isn't zero-sum heuristic, but a max-gain approach where only own player's
+        # value is is taken in account
         return float(state.get_scores_by_player()[self])
 
     def __init__(self, seed=None, timeout_seconds=5, heuristic=None, filter_moves=lambda x, y: x):
@@ -30,7 +32,7 @@ class AlphaBetaPlayer(AbstractPlayer):
         self.expectimax_alpha_beta = AlphaBetaExpectimax(
             is_maximizing_player=lambda p: p is self,
             evaluate_heuristic_value=heuristic,
-            timeout_seconds=timeout_seconds,
+            timeout_seconds=self._timeout_seconds,
             filter_moves=filter_moves)
 
     def choose_move(self, state: CatanState):

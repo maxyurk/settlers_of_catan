@@ -4,10 +4,12 @@ from algorithms.first_choice_hill_climbing import *
 from game.catan_state import CatanState
 from players.alpha_beta_player import AlphaBetaPlayer
 from players.alpha_beta_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
+from train_and_test.logger import logger
 
 
 class WeightsSpace(AbstractHillClimbableSpace):
     def __init__(self):
+        self.time_seconds = 5
         self._iterations_count = 0
         self._max_iterations = 10
         self._games_per_iteration = 5
@@ -16,14 +18,13 @@ class WeightsSpace(AbstractHillClimbableSpace):
         self._delta = 3
 
     def evaluate_state(self, weights) -> AbstractHillClimbingStateEvaluation:
-        print(weights)
+        logger.info('evaluating weights: {}'.format(weights))
         evaluation = 0
 
         for i in range(self._games_per_iteration):
             seed = self._seeds[i]
-            timeout_seconds = 3
-            p0 = AlphaBetaPlayer(seed, timeout_seconds)
-            p1 = AlphaBetaWeightedProbabilitiesPlayer(seed, timeout_seconds, weights)
+            p0 = AlphaBetaPlayer(seed, self.time_seconds)
+            p1 = AlphaBetaWeightedProbabilitiesPlayer(seed, self.time_seconds, weights)
             state = CatanState([p0, p1], seed)
 
             while not state.is_final():
@@ -31,6 +32,8 @@ class WeightsSpace(AbstractHillClimbableSpace):
                 state.make_random_move()
 
             scores = state.get_scores_by_player()
+            logger.info('done iteration {}. scores:{}'.format(i, scores))
+
             evaluation += scores[p1]
             evaluation -= scores[p0]
 
@@ -45,15 +48,18 @@ class WeightsSpace(AbstractHillClimbableSpace):
             next_weights[key] -= unit_fraction
 
         for key in next_weights.keys():
-            next_weights[key] += unit_fraction + self._unit
+            weight_modification = unit_fraction + self._unit
+            next_weights[key] += weight_modification
             yield next_weights
-            next_weights[key] -= unit_fraction + self._unit
+            next_weights[key] -= weight_modification
 
     def is_better(self, first_victories_count: int, second_victories_count: int) -> bool:
+        logger.info('is weight better: {}'.format(first_victories_count > second_victories_count + self._delta))
         return first_victories_count > second_victories_count + self._delta
 
     def enough_iterations(self) -> bool:
         return self._iterations_count >= self._max_iterations
 
 if __name__ == '__main__':
-    first_choice_hill_climbing(WeightsSpace(), AlphaBetaWeightedProbabilitiesPlayer.default_weights)
+    result = first_choice_hill_climbing(WeightsSpace(), AlphaBetaWeightedProbabilitiesPlayer.default_weights)
+    logger.info('best weights: {}'.format(result))
