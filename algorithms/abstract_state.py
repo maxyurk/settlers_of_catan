@@ -34,12 +34,12 @@ class AbstractState(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def pretend_to_make_a_move(self, move: AbstractMove):
+    def make_move(self, move: AbstractMove):
         """makes specified move"""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unpretend_to_make_a_move(self, move: AbstractMove):
+    def unmake_move(self, move: AbstractMove):
         """reverts specified move"""
         raise NotImplementedError()
 

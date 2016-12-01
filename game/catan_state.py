@@ -104,7 +104,12 @@ class CatanState(AbstractState):
         moves = self._get_all_possible_development_cards_purchase_count_moves(moves)
         return moves
 
-    def pretend_to_make_a_move(self, move: CatanMove):
+    def make_move(self, move: CatanMove):
+        """
+        apply move
+        :param move: move to apply
+        :return: None
+        """
         self.turns_count += 1
         self._pretend_to_make_a_move(move)
 
@@ -113,7 +118,12 @@ class CatanState(AbstractState):
 
         self._purchased_development_cards_in_current_turn_amount = move.development_cards_to_be_purchased_count
 
-    def unpretend_to_make_a_move(self, move: CatanMove):
+    def unmake_move(self, move: CatanMove):
+        """
+        revert move
+        :param move: move to revert
+        :return: None
+        """
         self._purchased_development_cards_in_current_turn_amount = 0
 
         self._revert_update_longest_road(move)
@@ -121,14 +131,6 @@ class CatanState(AbstractState):
 
         self._unpretend_to_make_a_move(move)
         self.turns_count -= 1
-
-    def make_move(self, move: CatanMove):
-        """makes specified move"""
-        self.pretend_to_make_a_move(move)
-
-    def unmake_move(self, move: CatanMove):
-        """reverts specified move"""
-        self.unpretend_to_make_a_move(move)
 
     def get_next_random_moves(self) -> List[RandomMove]:
         if self.is_initialisation_phase():
