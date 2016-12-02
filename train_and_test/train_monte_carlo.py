@@ -3,8 +3,8 @@ import math
 import time
 
 from game.catan_state import CatanState
-from players.monte_carlo_player import AlphaBetaMonteCarloPlayer
-from players.expectimax_baseline_player import AlphaBetaPlayer
+from players.monte_carlo_player import ExpectimaxMonteCarloPlayer
+from players.expectimax_baseline_player import ExpectimaxPlayer
 # noinspection PyUnresolvedReferences
 from players.random_player import RandomPlayer
 from train_and_test.logger import fileLogger
@@ -70,8 +70,8 @@ def golden_section_search(f, a, b, tol=tolerance):
 
 
 def execute_game_given_monte_carlo_branching_factor(branching_factor):
-    p0 = AlphaBetaPlayer(seed, timeout_seconds)  # RandomPlayer(seed)
-    p1 = AlphaBetaMonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
+    p0 = ExpectimaxPlayer(seed, timeout_seconds)  # RandomPlayer(seed)
+    p1 = ExpectimaxMonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
     state = CatanState([p0, p1], seed)
 
     count_moves = 0

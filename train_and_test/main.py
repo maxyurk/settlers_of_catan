@@ -1,8 +1,8 @@
 import os
 
 from game.catan_state import CatanState
-from players.expectimax_baseline_player import AlphaBetaPlayer
-from players.expectimax_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
+from players.expectimax_baseline_player import ExpectimaxPlayer
+from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
 from train_and_test.logger import logger, fileLogger
 
 
@@ -22,10 +22,10 @@ def clean_previous_images():
 def execute_game(seed):
 
     timeout_seconds = 5
-    p0 = AlphaBetaWeightedProbabilitiesPlayer(seed, timeout_seconds)
-    p1 = AlphaBetaPlayer(seed, timeout_seconds)
-    p2 = AlphaBetaPlayer(seed, timeout_seconds)
-    p3 = AlphaBetaPlayer(seed, timeout_seconds)
+    p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
+    p1 = ExpectimaxPlayer(seed, timeout_seconds)
+    p2 = ExpectimaxPlayer(seed, timeout_seconds)
+    p3 = ExpectimaxPlayer(seed, timeout_seconds)
     players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
@@ -63,7 +63,7 @@ def execute_game(seed):
 
     players_scores_by_names = {
         (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
-         if isinstance(v, AlphaBetaPlayer) else None): score_by_player[v]
+         if isinstance(v, ExpectimaxPlayer) else None): score_by_player[v]
         for k, v in locals().items() if v in players
         }
     fileLogger.info('\n' + '\n'.join(' {:150} : {} '.format(str(name), score)

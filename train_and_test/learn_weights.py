@@ -4,7 +4,7 @@ from typing import Dict
 
 from algorithms.first_choice_hill_climbing import *
 from game.catan_state import CatanState
-from players.expectimax_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
+from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
 from train_and_test.logger import logger
 
 learned_weights_file_name = 'learned_weights'
@@ -26,8 +26,8 @@ class WeightsSpace(AbstractHillClimbableSpace):
 
         for i in range(self._games_per_iteration):
             seed = self._seeds[i]
-            p0 = AlphaBetaWeightedProbabilitiesPlayer(seed, self._time_seconds)
-            p1 = AlphaBetaWeightedProbabilitiesPlayer(seed, self._time_seconds, weights)
+            p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, self._time_seconds)
+            p1 = ExpectimaxWeightedProbabilitiesPlayer(seed, self._time_seconds, weights)
             state = CatanState([p0, p1], seed)
 
             while not state.is_final():
@@ -80,7 +80,7 @@ def main():
     space = WeightsSpace()
     previous_result, result = None, None
     for _ in range(3):
-        result = first_choice_hill_climbing(space, AlphaBetaWeightedProbabilitiesPlayer.default_weights)
+        result = first_choice_hill_climbing(space, ExpectimaxWeightedProbabilitiesPlayer.default_weights)
         if result == previous_result:
             break
         previous_result = result
