@@ -1,9 +1,24 @@
 import os
+import string
 
 from game.catan_state import CatanState
 from players.expectimax_baseline_player import ExpectimaxPlayer
 from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
 from train_and_test.logger import logger, fileLogger
+
+A, B, C, D, E, F, G = [], [], [], [], [], [], []
+excel_file_name = 'ExpectimaxWeightedProbabilities_vs_baseline.xlsx'
+# !!! don't forget to set the players types (line ±40) and the excel file name (line ±10) !!!
+
+def excel_data_grabber(a, b, c, d, e, f, g):
+    global A, B, C, D, E, F, G
+    A.append(a)
+    B.append(b)
+    C.append(c)
+    D.append(d)
+    E.append(e)
+    F.append(f)
+    G.append(g)
 
 
 def scores_changed(state, previous_scores, scores):
@@ -20,12 +35,14 @@ def clean_previous_images():
 
 
 def execute_game(seed):
-
     timeout_seconds = 5
+    # !!! don't forget to set the players types (line ±40) and the excel file name (line ±10) !!!
     p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
+    p0_type = 'ExpectimaxWeightedProbabilitiesPlayer'
     p1 = ExpectimaxPlayer(seed, timeout_seconds)
     p2 = ExpectimaxPlayer(seed, timeout_seconds)
     p3 = ExpectimaxPlayer(seed, timeout_seconds)
+    p1_2_3_type = 'ExpectimaxPlayer'
     players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
@@ -70,11 +87,30 @@ def execute_game(seed):
                                      for name, score in players_scores_by_names.items()) +
                     '\n turns it took: {}\n'.format(turn_count) + ('-' * 156))
 
+    p0_score = state.get_scores_by_player()[p0]
+    p1_score = state.get_scores_by_player()[p1]
+    p2_score = state.get_scores_by_player()[p2]
+    p3_score = state.get_scores_by_player()[p3]
+    excel_data_grabber(p0_score, p1_score, p2_score, p3_score, turn_count, p0_type, p1_2_3_type)
+
+
+def flush_to_excel(sheet_name: string):
+    global A, B, C, D, E, F, G, excel_file_name
+    import pandas as pd
+    df = pd.DataFrame({"p0_score": A, "p1_score": B, "p2_score": C,
+                       "p3_score": D, "turn_count": E, "p0_type": F, "p1_2_3_type": G})
+    writer = pd.ExcelWriter(excel_file_name, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name=sheet_name)
+
 
 def main():
+    global A, B, C, D, E, F, G
     for seed in range(1, 4):
+        A, B, C, D, E, F, G = [], [], [], [], [], [], []
         clean_previous_images()
         execute_game(seed)
+        flush_to_excel(sheet_name='game_{}'.format(seed))
+
 
 if __name__ == '__main__':
     main()
