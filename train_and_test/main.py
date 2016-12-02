@@ -3,7 +3,6 @@ import os
 from game.catan_state import CatanState
 from players.alpha_beta_player import AlphaBetaPlayer
 from players.alpha_beta_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
-from players.random_player import RandomPlayer
 from train_and_test.logger import logger, fileLogger
 
 
@@ -20,21 +19,21 @@ def clean_previous_images():
             os.remove(file_name)
 
 
-def execute_game():
+def execute_game(seed):
 
-    seed = 121
     timeout_seconds = 5
-
     p0 = AlphaBetaWeightedProbabilitiesPlayer(seed, timeout_seconds)
-    p1 = RandomPlayer(seed)
-    players = [p0, p1]  # , p2, p3]
+    p1 = AlphaBetaPlayer(seed, timeout_seconds)
+    p2 = AlphaBetaPlayer(seed, timeout_seconds)
+    p3 = AlphaBetaPlayer(seed, timeout_seconds)
+    players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
 
     turn_count = 0
     score_by_player = state.get_scores_by_player()
-    state.board.plot_map('turn_{}_scores_{}.png'
-                         .format(turn_count, ''.join('{}_'.format(v) for v in score_by_player.values())))
+    # state.board.plot_map('turn_{}_scores_{}.png'
+    #                      .format(turn_count, ''.join('{}_'.format(v) for v in score_by_player.values())))
 
     while not state.is_final():
         # noinspection PyProtectedMember
@@ -48,17 +47,19 @@ def execute_game():
         state.make_move(move)
         state.make_random_move()
 
+        previous_score_by_player = score_by_player
         score_by_player = state.get_scores_by_player()
 
-        scores = ''.join('{} '.format(v) for v in score_by_player.values())
-        move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
-                     (k == 'robber_placement_land' and v == robber_placement) and not
-                     (isinstance(v, dict) and sum(v.values()) == 0)}
-        logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
+        if scores_changed(state, previous_score_by_player, score_by_player):
+            scores = ''.join('{} '.format(v) for v in score_by_player.values())
+            move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
+                         (k == 'robber_placement_land' and v == robber_placement) and not
+                         (isinstance(v, dict) and sum(v.values()) == 0)}
+            logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
 
-        image_name = 'turn_{}_scores_{}.png'.format(
-            turn_count, ''.join('{}_'.format(v) for v in score_by_player.values()))
-        state.board.plot_map(image_name, state.current_dice_number)
+            # image_name = 'turn_{}_scores_{}.png'.format(
+            #     turn_count, ''.join('{}_'.format(v) for v in score_by_player.values()))
+            # state.board.plot_map(image_name, state.current_dice_number)
 
     players_scores_by_names = {
         (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
@@ -70,9 +71,9 @@ def execute_game():
 
 
 def main():
-    for _ in range(5):
+    for seed in range(1, 4):
         clean_previous_images()
-        execute_game()
+        execute_game(seed)
 
 if __name__ == '__main__':
     main()
