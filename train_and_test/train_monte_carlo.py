@@ -12,7 +12,7 @@ from train_and_test.logger import fileLogger
 gr = (math.sqrt(5) + 1) / 2  # golden ratio
 tolerance = 50
 seed = None
-timeout_seconds = 3
+timeout_seconds = 1
 games_for_average = 3
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 
@@ -107,7 +107,7 @@ def train_monte_carlo():
     fileLogger.info('MAIN: Train Monte Carlo: '
                     'tolerance={}, seed={}, timeout_seconds={}, games_for_average={}         [{}]'
                     .format(tolerance, seed, timeout_seconds, games_for_average, int(time.time())))
-    res = golden_section_search(calc_average_result, 1, 5850)
+    res = golden_section_search(calc_average_result, 1, 600)  # 5850)
     fileLogger.info("MAIN: Optimal branching factor is : {}         [{}]".format(res, int(time.time())))
     import pandas as pd
     df = pd.DataFrame({"p0_score": A, "p1_score": B, "count_moves": C, "res": D, "branching factor": E})
