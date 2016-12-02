@@ -12,13 +12,13 @@ learned_weights_file_name = 'learned_weights'
 
 class WeightsSpace(AbstractHillClimbableSpace):
     def __init__(self):
-        self._time_seconds = 2
+        self._time_seconds = 5
         self._iterations_count = 0
         self._max_iterations = 10
-        self._games_per_iteration = 5
+        self._games_per_iteration = 3
         self._seeds = [i for i in range(1, self._games_per_iteration + 1)]
         self.delta_unit = 0.4
-        self._delta_is_better = 3
+        self._epsilon_is_weighting_better = 3
 
     def evaluate_state(self, weights) -> AbstractHillClimbingStateEvaluation:
         logger.info('| evaluating weights: {}'.format(weights))
@@ -58,7 +58,7 @@ class WeightsSpace(AbstractHillClimbableSpace):
             next_weights[key] -= weight_modification
 
     def is_better(self, first_victories_count: int, second_victories_count: int) -> bool:
-        is_better = first_victories_count > second_victories_count + self._delta_is_better
+        is_better = first_victories_count > second_victories_count + self._epsilon_is_weighting_better
         logger.info('| is weight better: {}'.format(is_better))
         return is_better
 
