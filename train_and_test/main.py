@@ -110,7 +110,6 @@ def flush_to_excel():
 def main():
     global A, B, C, D, E, F, G
     for _ in range(10):
-        A, B, C, D, E, F, G = [], [], [], [], [], [], []
         clean_previous_images()
         execute_game(None)
     flush_to_excel()
