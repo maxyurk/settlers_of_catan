@@ -66,8 +66,9 @@ def execute_game(seed):
          if isinstance(v, AlphaBetaPlayer) else None): score_by_player[v]
         for k, v in locals().items() if v in players
         }
-    fileLogger.info('\n'.join(' {:100} : {} '.format(str(name), score) for name, score
-                              in players_scores_by_names.items()) + '\n' + '-' * 106 + '\n')
+    fileLogger.info('\n'.join(' {:100} : {} '.format(str(name), score)
+                              for name, score in players_scores_by_names.items()) + '\nturns it took: ' + turn_count +
+                    '\n' + '-' * 106 + '\n')
 
 
 def main():
