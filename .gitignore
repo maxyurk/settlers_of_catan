@@ -173,3 +173,7 @@ $RECYCLE.BIN/
 *.lnk
 train_and_test/turn_*
 train_and_test/results_*
+.DS_Store
+train_and_test/.DS_Store
+train_and_test/train_monte_carlo_fg*
+train_and_test/train_monte_carlo_ab*
