@@ -12,7 +12,7 @@ from train_and_test.logger import fileLogger
 gr = (math.sqrt(5) + 1) / 2  # golden ratio
 tolerance = 50
 seed = None
-timeout_seconds = 1
+timeout_seconds = 5
 games_for_average = 5
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 
@@ -71,7 +71,7 @@ def golden_section_search(f, a, b, tol=tolerance):
 
 def execute_game_given_monte_carlo_branching_factor(branching_factor):
     p0 = AlphaBetaPlayer(seed, timeout_seconds)  # RandomPlayer(seed)
-    p1 = AlphaBetaMonteCarloPlayer(seed, timeout_seconds, None, int(branching_factor))
+    p1 = AlphaBetaMonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
     state = CatanState([p0, p1], seed)
 
     count_moves = 0
