@@ -1,7 +1,7 @@
 from game.catan_state import CatanState
 from game.development_cards import DevelopmentCard
 from game.pieces import Road, Colony
-from players.alpha_beta_player import AlphaBetaPlayer
+from players.expectimax_baseline_player import AlphaBetaPlayer
 
 
 class AlphaBetaWeightedProbabilitiesPlayer(AlphaBetaPlayer):

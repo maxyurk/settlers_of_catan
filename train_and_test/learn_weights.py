@@ -3,7 +3,7 @@ import pickle
 
 from algorithms.first_choice_hill_climbing import *
 from game.catan_state import CatanState
-from players.alpha_beta_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
+from players.expectimax_weighted_probabilities_player import AlphaBetaWeightedProbabilitiesPlayer
 from train_and_test.logger import logger
 
 

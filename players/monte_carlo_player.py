@@ -1,4 +1,4 @@
-from players.alpha_beta_player import AlphaBetaPlayer
+from players.expectimax_baseline_player import AlphaBetaPlayer
 from players.filters import create_monte_carlo_filter
 
 

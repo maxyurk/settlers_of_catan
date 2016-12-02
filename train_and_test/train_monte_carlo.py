@@ -3,8 +3,8 @@ import math
 import time
 
 from game.catan_state import CatanState
-from players.alpha_beta_monte_carlo_player import AlphaBetaMonteCarloPlayer
-from players.alpha_beta_player import AlphaBetaPlayer
+from players.monte_carlo_player import AlphaBetaMonteCarloPlayer
+from players.expectimax_baseline_player import AlphaBetaPlayer
 # noinspection PyUnresolvedReferences
 from players.random_player import RandomPlayer
 from train_and_test.logger import fileLogger
@@ -120,7 +120,7 @@ def train_monte_carlo():
     df.to_excel(writer, sheet_name='monte_carlo')
 
     df2 = pd.DataFrame({"branching factor": F, "average": G})
-    writer2 = pd.ExcelWriter('train_monte_carlo_fg_{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
+    writer2 = pd.ExcelWriter('train_monte_carlo_fg____{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
     df2.to_excel(writer, sheet_name='monte_carlo')
     writer2.save()
 
