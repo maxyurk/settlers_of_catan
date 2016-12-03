@@ -4,13 +4,15 @@ import time
 from game.catan_state import CatanState
 from players.expectimax_baseline_player import ExpectimaxPlayer
 from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
+from players.filters import create_bad_robber_placement_filter
+from players.monte_carlo_player import ExpectimaxMonteCarloPlayer
+from players.monte_carlo_with_filter_player import ExpectimaxBothFiltersPlayer
 from train_and_test.logger import logger, fileLogger
 
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 excel_file_name = 'NAME_NOT_SET_{}.xlsx'.format(time.time())
 
 
-# !!! don't forget to set the players types (line ±40) and the excel file name (line ±10) !!!
 
 def excel_data_grabber(a, b, c, d, e, f, g):
     global A, B, C, D, E, F, G
@@ -38,8 +40,8 @@ def clean_previous_images():
 
 def execute_game(seed):
     timeout_seconds = 5
-    # !!! don't forget to set the players types (line ±40) and the excel file name (line ±10) !!!
     p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
+    # p0.set_filter(create_bad_robber_placement_filter(p0))
     p1 = ExpectimaxPlayer(seed, timeout_seconds)
     p2 = ExpectimaxPlayer(seed, timeout_seconds)
     p3 = ExpectimaxPlayer(seed, timeout_seconds)

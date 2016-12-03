@@ -12,7 +12,7 @@ from train_and_test.logger import fileLogger
 gr = (math.sqrt(5) + 1) / 2  # golden ratio
 tolerance = 50
 seed = None
-timeout_seconds = 1
+timeout_seconds = 5
 games_for_average = 3
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 
@@ -116,7 +116,7 @@ def train_monte_carlo():
 
     df2 = pd.DataFrame({"branching factor": F, "average": G})
     writer2 = pd.ExcelWriter('train_monte_carlo_fg____{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
-    df2.to_excel(writer, sheet_name='monte_carlo')
+    df2.to_excel(writer2, sheet_name='monte_carlo')
     writer2.save()
 
 if __name__ == '__main__':
