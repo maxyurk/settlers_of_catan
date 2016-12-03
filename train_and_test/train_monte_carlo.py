@@ -12,7 +12,7 @@ from train_and_test.logger import fileLogger
 gr = (math.sqrt(5) + 1) / 2  # golden ratio
 tolerance = 50
 seed = None
-timeout_seconds = 5
+timeout_seconds = 3
 games_for_average = 3
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 
@@ -70,6 +70,7 @@ def golden_section_search(f, a, b, tol=tolerance):
 
 
 def execute_game_given_monte_carlo_branching_factor(branching_factor):
+    fileLogger.info('EXEC_GAME: branching_factor={}'.format(branching_factor))
     p0 = ExpectimaxPlayer(seed, timeout_seconds)  # RandomPlayer(seed)
     p1 = ExpectimaxMonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
     state = CatanState([p0, p1], seed)
@@ -95,7 +96,17 @@ def execute_game_given_monte_carlo_branching_factor(branching_factor):
 
 def calc_average_result(branching_factor: int):
     global games_for_average
-    results = [execute_game_given_monte_carlo_branching_factor(branching_factor) for _ in range(games_for_average)]
+    import multiprocessing
+
+    try:
+        cpus = multiprocessing.cpu_count()
+    except NotImplementedError:
+        cpus = 2  # arbitrary default
+
+    pool = multiprocessing.Pool(processes=cpus)
+    results = pool.map(execute_game_given_monte_carlo_branching_factor, [branching_factor]*games_for_average)
+
+    # results = [execute_game_given_monte_carlo_branching_factor(branching_factor) for _ in range(games_for_average)]
     average = sum(results) / len(results)
     fileLogger.info('AVERAGE: average of {} games is {}'.format(len(results), average))
     excel_data_grabber2(branching_factor, average)
@@ -107,7 +118,7 @@ def train_monte_carlo():
     fileLogger.info('MAIN: Train Monte Carlo: '
                     'tolerance={}, seed={}, timeout_seconds={}, games_for_average={}         [{}]'
                     .format(tolerance, seed, timeout_seconds, games_for_average, int(time.time())))
-    res = golden_section_search(calc_average_result, 1, 600)  # 5850)
+    res = golden_section_search(calc_average_result, 1, 5850)
     fileLogger.info("MAIN: Optimal branching factor is : {}         [{}]".format(res, int(time.time())))
     import pandas as pd
     df = pd.DataFrame({"p0_score": A, "p1_score": B, "count_moves": C, "res": D, "branching factor": E})
@@ -118,6 +129,7 @@ def train_monte_carlo():
     writer2 = pd.ExcelWriter('train_monte_carlo_fg____{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
     df2.to_excel(writer2, sheet_name='monte_carlo')
     writer2.save()
+
 
 if __name__ == '__main__':
     train_monte_carlo()
