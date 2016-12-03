@@ -43,9 +43,9 @@ def execute_game(seed):
     p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
     # p0.set_filter(create_bad_robber_placement_filter(p0))
     p1 = ExpectimaxPlayer(seed, timeout_seconds)
-    p2 = ExpectimaxPlayer(seed, timeout_seconds)
-    p3 = ExpectimaxPlayer(seed, timeout_seconds)
-    players = [p0, p1, p2, p3]
+    # p2 = ExpectimaxPlayer(seed, timeout_seconds)
+    # p3 = ExpectimaxPlayer(seed, timeout_seconds)
+    players = [p0, p1]  #, p2, p3]
 
     state = CatanState(players, seed)
 
@@ -92,11 +92,11 @@ def execute_game(seed):
     p0_type = type(p0).__name__
     p1_2_3_type = type(p1).__name__
     global excel_file_name
-    excel_file_name = '{}_vs_{}_timeout_{}_seed_{}.xlsx'.format(p0_type, p1_2_3_type, timeout_seconds, seed)
+    excel_file_name = '{}_vs_{}_timeout_{}_seed_{}_tournament_{}.xlsx'.format(p0_type, p1_2_3_type, timeout_seconds, seed, int(time.time()))
     p0_score = state.get_scores_by_player()[p0]
     p1_score = state.get_scores_by_player()[p1]
-    p2_score = state.get_scores_by_player()[p2]
-    p3_score = state.get_scores_by_player()[p3]
+    p2_score = 0  # state.get_scores_by_player()[p2]
+    p3_score = 0  # state.get_scores_by_player()[p3]
     excel_data_grabber(p0_score, p1_score, p2_score, p3_score, turn_count, p0_type, p1_2_3_type)
 
 
