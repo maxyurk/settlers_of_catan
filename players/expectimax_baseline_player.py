@@ -12,7 +12,7 @@ from players.random_player import RandomPlayer
 from train_and_test.logger import logger
 
 
-class ExpectimaxPlayer(AbstractPlayer):
+class ExpectimaxBaselinePlayer(AbstractPlayer):
 
     def default_heuristic(self, state: CatanState):
         if state.is_initialisation_phase():

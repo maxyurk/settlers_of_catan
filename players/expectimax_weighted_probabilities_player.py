@@ -1,10 +1,10 @@
 from game.catan_state import CatanState
 from game.development_cards import DevelopmentCard
 from game.pieces import Road, Colony
-from players.expectimax_baseline_player import ExpectimaxPlayer
+from players.expectimax_baseline_player import ExpectimaxBaselinePlayer
 
 
-class ExpectimaxWeightedProbabilitiesPlayer(ExpectimaxPlayer):
+class ExpectimaxWeightedProbabilitiesPlayer(ExpectimaxBaselinePlayer):
     default_weights = {Colony.City: 2, Colony.Settlement: 1, Road.Paved: 0.4,
                        DevelopmentCard.VictoryPoint: 1, DevelopmentCard.Knight: 2.0 / 3.0}
 

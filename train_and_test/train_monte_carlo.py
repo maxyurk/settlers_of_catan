@@ -1,19 +1,17 @@
 import math
-
 import time
 
 from game.catan_state import CatanState
-from players.monte_carlo_player import ExpectimaxMonteCarloPlayer
-from players.expectimax_baseline_player import ExpectimaxPlayer
-# noinspection PyUnresolvedReferences
+from players.expectimax_baseline_player import ExpectimaxBaselinePlayer
+from players.monte_carlo_player import MonteCarloPlayer
 from players.random_player import RandomPlayer
 from train_and_test.logger import fileLogger
 
 gr = (math.sqrt(5) + 1) / 2  # golden ratio
-tolerance = 50
+tolerance = 100
 seed = None
-timeout_seconds = 3
-games_for_average = 3
+timeout_seconds = 5
+games_for_average = 4
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 
 
@@ -71,8 +69,8 @@ def golden_section_search(f, a, b, tol=tolerance):
 
 def execute_game_given_monte_carlo_branching_factor(branching_factor):
     fileLogger.info('EXEC_GAME: branching_factor={}'.format(branching_factor))
-    p0 = ExpectimaxPlayer(seed, timeout_seconds)  # RandomPlayer(seed)
-    p1 = ExpectimaxMonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
+    p0 = ExpectimaxBaselinePlayer(seed, timeout_seconds)  # RandomPlayer(seed)
+    p1 = MonteCarloPlayer(seed, timeout_seconds, int(branching_factor))
     state = CatanState([p0, p1], seed)
 
     count_moves = 0
@@ -84,9 +82,9 @@ def execute_game_given_monte_carlo_branching_factor(branching_factor):
     p0_score = state.get_scores_by_player()[p0]
     p1_score = state.get_scores_by_player()[p1]
     count_moves_factor = 1 * count_moves
-    p0_factor = 10000 if (p0_score >= 10) else 0
-    p1_factor = p1_score * 0.2
-    res = - p0_factor + (p1_factor * count_moves_factor)
+    p0_factor = p1_score * 0.2
+    p1_factor = 1000 if (p1_score >= 10) else 0
+    res = - p1_factor + (p0_factor * count_moves_factor)
     fileLogger.info('EXEC_GAME: p0_score={}, p1_score={}, count_moves={}, p0_factor={}, p1_factor={}, '
                     'count_moves_factor={}, res={}'.format(p0_score, p1_score, count_moves, p0_factor, p1_factor,
                                                            count_moves_factor, res))
@@ -104,7 +102,7 @@ def calc_average_result(branching_factor: int):
         cpus = 2  # arbitrary default
 
     pool = multiprocessing.Pool(processes=cpus)
-    results = pool.map(execute_game_given_monte_carlo_branching_factor, [branching_factor]*games_for_average)
+    results = pool.map(execute_game_given_monte_carlo_branching_factor, [branching_factor] * games_for_average)
 
     # results = [execute_game_given_monte_carlo_branching_factor(branching_factor) for _ in range(games_for_average)]
     average = sum(results) / len(results)
@@ -115,21 +113,23 @@ def calc_average_result(branching_factor: int):
 
 def train_monte_carlo():
     global tolerance, seed, timeout_seconds, games_for_average
+    global A, B, C, D, E, F, G
     fileLogger.info('MAIN: Train Monte Carlo: '
                     'tolerance={}, seed={}, timeout_seconds={}, games_for_average={}         [{}]'
                     .format(tolerance, seed, timeout_seconds, games_for_average, int(time.time())))
-    res = golden_section_search(calc_average_result, 1, 5850)
+
+    res = golden_section_search(calc_average_result, 1, 4000)
+
     fileLogger.info("MAIN: Optimal branching factor is : {}         [{}]".format(res, int(time.time())))
     import pandas as pd
     df = pd.DataFrame({"p0_score": A, "p1_score": B, "count_moves": C, "res": D, "branching factor": E})
-    writer = pd.ExcelWriter('train_monte_carlo_abcde_{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
+    writer = pd.ExcelWriter('train_monte_carlo_abcde_{}.xlsx'.format(int(time.time())), engine='xlsxwriter')
     df.to_excel(writer, sheet_name='monte_carlo')
-
+    writer.save()
     df2 = pd.DataFrame({"branching factor": F, "average": G})
-    writer2 = pd.ExcelWriter('train_monte_carlo_fg____{:.3f}.xlsx'.format(int(time.time())), engine='xlsxwriter')
+    writer2 = pd.ExcelWriter('train_monte_carlo_fg____{}.xlsx'.format(int(time.time())), engine='xlsxwriter')
     df2.to_excel(writer2, sheet_name='monte_carlo')
     writer2.save()
-
 
 if __name__ == '__main__':
     train_monte_carlo()

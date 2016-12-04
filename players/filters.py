@@ -3,7 +3,7 @@ from numpy import random
 from game.catan_state import CatanState
 
 
-def create_monte_carlo_filter(seed, branching_factor=10):
+def create_monte_carlo_filter(seed, branching_factor=3459):
     # noinspection PyUnusedLocal
     def monte_carlo_filter(all_moves, state=None):  # state here to return correct method type
         if len(all_moves) <= branching_factor:
@@ -35,7 +35,7 @@ def create_bad_robber_placement_filter(player):
     return bad_robber_placement_filter
 
 
-def create_bad_robber_placement_and_monte_carlo_filter(seed, player, branching_factor=10):
+def create_bad_robber_placement_and_monte_carlo_filter(seed, player, branching_factor=3459):
     a = create_bad_robber_placement_filter(player)
     b = create_monte_carlo_filter(seed, branching_factor)
 

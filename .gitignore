@@ -177,3 +177,5 @@ train_and_test/results_*
 train_and_test/.DS_Store
 train_and_test/train_monte_carlo_fg*
 train_and_test/train_monte_carlo_ab*
+train_and_test/*vs*
+train_and_test/next_moves_counters.xlsx

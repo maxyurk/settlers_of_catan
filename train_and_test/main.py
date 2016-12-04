@@ -2,11 +2,10 @@ import os
 import time
 
 from game.catan_state import CatanState
-from players.expectimax_baseline_player import ExpectimaxPlayer
+from players.expectimax_baseline_player import ExpectimaxBaselinePlayer
 from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
 from players.filters import create_bad_robber_placement_filter
-from players.monte_carlo_player import ExpectimaxMonteCarloPlayer
-from players.monte_carlo_with_filter_player import ExpectimaxBothFiltersPlayer
+from players.monte_carlo_with_filter_player import MonteCarloWithFilterPlayer
 from train_and_test.logger import logger, fileLogger
 
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
@@ -40,11 +39,12 @@ def clean_previous_images():
 
 def execute_game(seed):
     timeout_seconds = 5
-    p0 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
+    p0 = MonteCarloWithFilterPlayer(seed, timeout_seconds)
     # p0.set_filter(create_bad_robber_placement_filter(p0))
-    p1 = ExpectimaxPlayer(seed, timeout_seconds)
-    # p2 = ExpectimaxPlayer(seed, timeout_seconds)
-    # p3 = ExpectimaxPlayer(seed, timeout_seconds)
+    p1 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
+    p1.set_filter(create_bad_robber_placement_filter(p0))
+    # p2 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
+    # p3 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
     players = [p0, p1]  #, p2, p3]
 
     state = CatanState(players, seed)
@@ -82,7 +82,7 @@ def execute_game(seed):
 
     players_scores_by_names = {
         (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
-         if isinstance(v, ExpectimaxPlayer) else None): score_by_player[v]
+        if isinstance(v, ExpectimaxBaselinePlayer) else None): score_by_player[v]
         for k, v in locals().items() if v in players
         }
     fileLogger.info('\n' + '\n'.join(' {:150} : {} '.format(str(name), score)
@@ -92,7 +92,8 @@ def execute_game(seed):
     p0_type = type(p0).__name__
     p1_2_3_type = type(p1).__name__
     global excel_file_name
-    excel_file_name = '{}_vs_{}_timeout_{}_seed_{}_tournament_{}.xlsx'.format(p0_type, p1_2_3_type, timeout_seconds, seed, int(time.time()))
+    excel_file_name = '{}_vs_{}_timeout_{}_seed_{}.xlsx'.format(p0_type, p1_2_3_type, timeout_seconds, seed,
+                                                                int(time.time()))
     p0_score = state.get_scores_by_player()[p0]
     p1_score = state.get_scores_by_player()[p1]
     p2_score = 0  # state.get_scores_by_player()[p2]
