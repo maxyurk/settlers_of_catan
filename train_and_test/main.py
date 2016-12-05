@@ -3,14 +3,17 @@ import time
 
 from game.catan_state import CatanState
 from players.expectimax_baseline_player import ExpectimaxBaselinePlayer
+# noinspection PyUnresolvedReferences
 from players.expectimax_weighted_probabilities_player import ExpectimaxWeightedProbabilitiesPlayer
+# noinspection PyUnresolvedReferences
 from players.filters import create_bad_robber_placement_filter
+# noinspection PyUnresolvedReferences
 from players.monte_carlo_with_filter_player import MonteCarloWithFilterPlayer
+from players.random_player import RandomPlayer
 from train_and_test.logger import logger, fileLogger
 
 A, B, C, D, E, F, G = [], [], [], [], [], [], []
 excel_file_name = 'NAME_NOT_SET_{}.xlsx'.format(time.time())
-
 
 
 def excel_data_grabber(a, b, c, d, e, f, g):
@@ -39,13 +42,11 @@ def clean_previous_images():
 
 def execute_game(seed):
     timeout_seconds = 5
-    p0 = MonteCarloWithFilterPlayer(seed, timeout_seconds)
-    # p0.set_filter(create_bad_robber_placement_filter(p0))
-    p1 = ExpectimaxWeightedProbabilitiesPlayer(seed, timeout_seconds)
-    p1.set_filter(create_bad_robber_placement_filter(p0))
-    # p2 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
-    # p3 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
-    players = [p0, p1]  #, p2, p3]
+    p0 = RandomPlayer(seed)
+    p1 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
+    p2 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
+    p3 = ExpectimaxBaselinePlayer(seed, timeout_seconds)
+    players = [p0, p1, p2, p3]
 
     state = CatanState(players, seed)
 
@@ -71,18 +72,18 @@ def execute_game(seed):
 
         if scores_changed(state, previous_score_by_player, score_by_player):
             scores = ''.join('{} '.format(v) for v in score_by_player.values())
-            move_data = {k: v for k, v in move.__dict__.items() if v and k != 'resources_updates' and not
-                         (k == 'robber_placement_land' and v == robber_placement) and not
-                         (isinstance(v, dict) and sum(v.values()) == 0)}
+            move_data = {k: v for k, v in move.__dict__.items() if (
+                v and k != 'resources_updates' and not
+                (k == 'robber_placement_land' and v == robber_placement) and not
+                (isinstance(v, dict) and sum(v.values()) == 0))}
             logger.info('| {}| turn: {:3} | move:{} |'.format(scores, turn_count, move_data))
 
             # image_name = 'turn_{}_scores_{}.png'.format(
             #     turn_count, ''.join('{}_'.format(v) for v in score_by_player.values()))
             # state.board.plot_map(image_name, state.current_dice_number)
 
-    players_scores_by_names = {
-        (k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__
-        if isinstance(v, ExpectimaxBaselinePlayer) else None): score_by_player[v]
+    players_scores_by_names = {(k, v.__class__, v.expectimax_alpha_beta.evaluate_heuristic_value.__name__ if (
+        isinstance(v, ExpectimaxBaselinePlayer)) else None): score_by_player[v]
         for k, v in locals().items() if v in players
         }
     fileLogger.info('\n' + '\n'.join(' {:150} : {} '.format(str(name), score)
@@ -112,9 +113,19 @@ def flush_to_excel():
 
 def main():
     global A, B, C, D, E, F, G
-    for _ in range(10):
-        clean_previous_images()
-        execute_game(None)
+    import multiprocessing
+
+    try:
+        cpus = multiprocessing.cpu_count()
+    except NotImplementedError:
+        cpus = 2  # arbitrary default
+
+    pool = multiprocessing.Pool(processes=cpus)
+    pool.map(execute_game, [None] * 10)
+
+    # for _ in range(10):
+    #     clean_previous_images()
+    #     execute_game(None)
     flush_to_excel()
 
 
