@@ -460,15 +460,15 @@ class Board:
         for v in self._player_colonies_points.keys():
             blocks.append('\\n'.join(wrap(pformat(
                 {k: v for k, v in v.__dict__.items()
-                 if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds'}}),
-                width=45)).replace('{', '').replace('}', '').replace(',', '').replace('DevelopmentCard.', '')
-                          .replace('<', '').replace('>', '').replace("'", '').replace('Knight: 0', 'Knight')
-                          .replace('RoadBuilding: 2', 'Road Building').replace('VictoryPoint: 1', 'Victory Point')
-                          .replace('Monopoly: 3', 'Monopoly').replace('YearOfPlenty: 4', 'Year Of Plenty')
-                          .replace('Resource.', '').replace('Colony.', '').replace('.Paved', '')
-                          .replace('Road: 1', 'Road').replace(': 0:', ':').replace(': 1:', ':').replace(': 2:', ':')
-                          .replace(': 3:', ':').replace(': 4:', ':').replace('pieces:', 'pieces:\\n')
-                          .replace('resources', '\\nresources'))
+                 if k not in {'_random_choice', 'expectimax_alpha_beta', '_timeout_seconds', '_players_and_factors',
+                              'weights'}}), width=45)).replace('{', '').replace('}', '').replace(',', '')
+                          .replace('DevelopmentCard.', '').replace('<', '').replace('>', '').replace("'", '')
+                          .replace('Knight: 0', 'Knight').replace('RoadBuilding: 2', 'Road Building')
+                          .replace('VictoryPoint: 1', 'Victory Point').replace('Monopoly: 3', 'Monopoly')
+                          .replace('YearOfPlenty: 4', 'Year Of Plenty').replace('Resource.', '').replace('Colony.', '')
+                          .replace('.Paved', '').replace('Road: 1', 'Road').replace(': 0:', ':').replace(': 1:', ':')
+                          .replace(': 2:', ':').replace(': 3:', ':').replace(': 4:', ':')
+                          .replace('pieces:', 'pieces:\\n').replace('resources', '\\nresources'))
         blocks.append('rolled:\\n{}'.format(dice))
         g.add_node('game_data', shape='record', label='|'.join(blocks), fontsize=20, fontname='times-bold')
         g.add_edge('game_data', 26)
